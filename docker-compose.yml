@@ -1,0 +1,122 @@
+services:
+  # --- DATABASES & BROKERS ---
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: user
+    ports:
+      - "3307:3306"
+
+  rabbitmq-broker:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-broker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # --- SPRING CLOUD INFRASTRUCTURE ---
+  service-registry:
+    build: ./service-registry
+    container_name: service-registry
+    ports:
+      - "8761:8761"
+
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+    depends_on:
+      - service-registry
+
+  # --- API GATEWAY ---
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888/
+    depends_on:
+      - service-registry
+      - config-server
+
+  # --- MICROSERVICES ---
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"  # ✅ Matches GitHub config
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/omnicharge_user
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=user
+    depends_on:
+      - mysql-db
+      - service-registry
+
+  operator-service:
+    build: ./operator-service
+    container_name: operator-service
+    ports:
+      - "8082:8082"  # ✅ Matches GitHub config
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/omnicharge_operator
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=user
+    depends_on:
+      - mysql-db
+      - service-registry
+
+  recharge-service:
+    build: ./recharge-service
+    container_name: recharge-service
+    ports:
+      - "8083:8083"  # ✅ Matches GitHub config
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/omnicharge_recharge
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=user
+      - SPRING_RABBITMQ_HOST=rabbitmq-broker
+    depends_on:
+      - mysql-db
+      - rabbitmq-broker
+      - service-registry
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "8084:8084"  # ✅ Matches GitHub config
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/omnicharge_payment
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=user
+    depends_on:
+      - mysql-db
+      - service-registry
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8085:8085"  # ✅ Matches GitHub config
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888/
+      - SPRING_RABBITMQ_HOST=rabbitmq-broker
+    depends_on:
+      - rabbitmq-broker
+      - service-registry

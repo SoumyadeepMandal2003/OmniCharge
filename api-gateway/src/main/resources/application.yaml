@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: API-GATEWAY
+  config:
+    # Changed localhost to config-server
+    import: "optional:configserver:http://config-server:8888"
+
+jwt:
+  # Adding this here ensures the Gateway doesn't crash if Config Server is slow
+  secret: "mysecretkeymysecretkeymysecretkey12345"
+
+eureka:
+  client:
+    service-url:
+      # Changed localhost to service-registry
+      defaultZone: http://service-registry:8761/eureka/
