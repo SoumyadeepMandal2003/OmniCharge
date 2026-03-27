@@ -1,558 +1,170 @@
-\# ⚡ OmniCharge: Mobile Recharge \& Utility Payment Platform
+# ⚡ OmniCharge
 
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.12-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![Spring Cloud](https://img.shields.io/badge/Spring_Cloud-Microservices-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Messaging-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Containerization-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
+**OmniCharge** is a dynamic, highly scalable, and distributed digital backend system built to simulate a real-world telecom mobile recharge and utility payment platform.  
+Powered by a **Spring Boot Microservices Architecture**, it provides a robust ecosystem handling user authentication, operator plans, secure payments, and asynchronous event-driven notifications.
 
-!\[Spring Boot](https://img.shields.io/badge/Spring\_Boot-3.5.12-6DB33F?style=for-the-badge\&logo=spring-boot\&logoColor=white)
+---
 
-!\[Spring Cloud](https://img.shields.io/badge/Spring\_Cloud-Microservices-6DB33F?style=for-the-badge\&logo=spring\&logoColor=white)
+## 🚀 Features
 
-!\[MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge\&logo=mysql\&logoColor=white)
+- **🔐 Centralized Security:** JWT-based authentication validated entirely at the API Gateway level.
+- **🌐 Dynamic Service Discovery:** Netflix Eureka ensures seamless and dynamic routing between microservices.
+- **⚡ Synchronous Communication:** Smooth inter-service data fetching using **OpenFeign** (e.g., Recharge validating plans with Operator).
+- **📬 Asynchronous Messaging:** Event-driven architecture using **RabbitMQ** to decouple payment success from notification delivery.
+- **🐳 Fully Containerized:** Optimized for modern DevOps with a complete **Docker** and `docker-compose` setup for one-click deployment.
+- **🛡️ Fault Tolerant & Isolated:** Every microservice maintains its own dedicated **MySQL** database, preventing single points of failure.
+- **⚙️ Centralized Configuration:** Application properties are managed externally via Spring Cloud Config Server.
 
-!\[RabbitMQ](https://img.shields.io/badge/RabbitMQ-Messaging-FF6600?style=for-the-badge\&logo=rabbitmq\&logoColor=white)
+---
 
-!\[Docker](https://img.shields.io/badge/Docker-Containerization-2496ED?style=for-the-badge\&logo=docker\&logoColor=white)
+## 🛠️ Technologies Used
 
+| Category | Technologies |
+|-----------|---------------|
+| **Core Framework** | Java 17, Spring Boot 3.5.x |
+| **Microservices** | Spring Cloud (Gateway, Eureka, Config, OpenFeign) |
+| **Security** | Spring Security, JSON Web Tokens (JJWT) |
+| **Database & ORM** | MySQL 8.0, Spring Data JPA, Hibernate |
+| **Messaging** | RabbitMQ (Spring AMQP) |
+| **Testing** | JUnit 5, Mockito |
+| **DevOps & Containerization**| Docker, Docker Compose, Maven |
 
+---
 
-> A highly scalable, distributed microservices platform simulating a real-world telecom mobile recharge application. 
+## 🧩 Project Structure
 
-
-
-\---
-
-
-
-\## 📖 1. Project Overview
-
-\*\*OmniCharge\*\* is a robust digital backend system designed to allow users to perform mobile recharges and manage related transactions securely. Built entirely on a \*\*Microservices Architecture\*\*, this platform ensures high availability, independent scalability, and fault tolerance. 
-
-
-
-The system encompasses modern backend engineering practices including \*\*Centralized JWT Authentication\*\*, \*\*Synchronous (OpenFeign)\*\* and \*\*Asynchronous (RabbitMQ)\*\* inter-service communication, distributed configuration, and full containerization via \*\*Docker\*\*.
-
-
-
-\---
-
-
-
-\## 🏗️ 2. High-Level Architecture
-
-
+The ecosystem is organized into independent microservices and infrastructure components:
 
 ```text
-
-Client (Web/Mobile/Postman)
-
-&#x20;       │
-
-&#x20;       ▼  (Authorization: Bearer <JWT>)
-
-&#x20;┌───────────────────────────────────┐
-
-&#x20;│        API Gateway (Port 8080)    │ ──▶ Centralized JWT Security \& Routing
-
-&#x20;└─────────────────┬─────────────────┘
-
-&#x20;                  │
-
-&#x20;┌─────────────────┼─────────────────┬─────────────────┐
-
-&#x20;│                 │                 │                 │
-
-&#x20;▼                 ▼                 ▼                 ▼
-
-User Service    Operator         Recharge           Payment 
-
-(Port 8081)     Service          Service            Service
-
-&#x20;               (Port 8082)      (Port 8083)        (Port 8084)
-
-&#x20;│                 │                 │                 │
-
-&#x20;└──▶ MySQL        └──▶ MySQL        ├──▶ MySQL        ├──▶ MySQL
-
-&#x20;                                    │                 │
-
-&#x20;                                    ▼                 ▼
-
-&#x20;                             \[ RabbitMQ Message Broker ]
-
-&#x20;                                          │
-
-&#x20;                                          ▼
-
-&#x20;                                Notification Service
-
-&#x20;                                    (Port 8085)
-
-```
-
-\*Infrastructure Services: \*\*Eureka Service Registry\*\* (Port 8761) \& \*\*Spring Cloud Config Server\*\* (Port 8888)\*
-
-
-
-\---
-
-
-
-\## 🧩 3. Microservices Landscape
-
-
-
-The system is broken down into 8 independently deployable components:
-
-
-
-| Microservice | Port | Database | Primary Responsibility |
-
-| :--- | :--- | :--- | :--- |
-
-| \*\*Service Registry\*\* | `8761` | \*None\* | Netflix Eureka Server for dynamic service discovery. |
-
-| \*\*Config Server\*\* | `8888` | \*None\* | Centralized configuration management linked to a private GitHub repo. |
-
-| \*\*API Gateway\*\* | `8080` | \*None\* | Single entry point, routing, and centralized JWT validation (WebFlux). |
-
-| \*\*User Service\*\* | `8081` | `omnicharge\_user` | User onboarding, authentication, and JWT token generation. |
-
-| \*\*Operator Service\*\* | `8082` | `omnicharge\_operator` | Manages telecom operators (Jio, Airtel) and active recharge plans. |
-
-| \*\*Recharge Service\*\* | `8083` | `omnicharge\_recharge` | Core business logic. Validates plans via OpenFeign and stores recharge history. |
-
-| \*\*Payment Service\*\* | `8084` | `omnicharge\_payment` | Simulates secure payment processing and generates transaction UUIDs. |
-
-| \*\*Notification Service\*\*| `8085` | \*None\* | Consumes async RabbitMQ events to trigger user alerts (SMS/Email simulation). |
-
-
-
-\---
-
-
-
-\## 💻 4. Technology Stack
-
-
-
-\* \*\*Core Framework:\*\* Java 17, Spring Boot 3.5.x
-
-\* \*\*Microservices Tools:\*\* Spring Cloud Netflix Eureka, Spring Cloud Gateway, Spring Cloud Config, OpenFeign
-
-\* \*\*Security:\*\* Spring Security, JSON Web Tokens (JJWT)
-
-\* \*\*Database \& ORM:\*\* MySQL 8.0, Spring Data JPA, Hibernate
-
-\* \*\*Messaging System:\*\* RabbitMQ (Spring AMQP)
-
-\* \*\*Testing:\*\* JUnit 5, Mockito
-
-\* \*\*Documentation \& Monitoring:\*\* Swagger / OpenAPI 3.0, Spring Boot Actuator
-
-\* \*\*DevOps:\*\* Docker, Docker Compose, Maven
-
-
-
-\---
-
-
-
-```text
-
-📦 OmniCharge
-
+OmniCharge/
+├── 📁 service-registry/       # Eureka Server for service discovery
+├── 📁 config-server/          # Centralized configuration management
+├── 📁 api-gateway/            # Single entry point & JWT validation
 │
-
-├── 📁 service-registry
-
-├── 📁 config-server
-
-├── 📁 api-gateway
-
+├── 📁 user-service/           # Auth, JWT generation, user management
+├── 📁 operator-service/       # Telecom operators and plan details
+├── 📁 recharge-service/       # Core business logic & OpenFeign orchestration
+├── 📁 payment-service/        # Transaction simulation & UUID generation
+├── 📁 notification-service/   # RabbitMQ consumer for user alerts
 │
-
-├── 📁 user-service
-
-├── 📁 operator-service
-
-├── 📁 recharge-service
-
-├── 📁 payment-service
-
-├── 📁 notification-service
-
-│
-
-├── 🐳 docker-compose.yml
-
+├── 🐳 docker-compose.yml      # Container orchestration
 └── 📄 README.md
-
 ```
 
+---
 
+## ⚙️ Getting Started
 
-\---
+Follow these steps to set up **OmniCharge** locally:
 
-
-
-\## 🔐 5. Security Implementation
-
-
-
-Authentication is implemented using \*\*JWT tokens\*\*.
-
-
-
-\### Public APIs
-
-```http
-
-POST /auth/register
-
-POST /auth/login
-
+### 1️⃣ Clone the repository
+```bash
+git clone [https://github.com/soumyadeepmandal2003/OmniCharge.git](https://github.com/soumyadeepmandal2003/OmniCharge.git)
+cd OmniCharge
 ```
 
+### 2️⃣ Run via Docker (Recommended)
+This project includes a fully configured `docker-compose.yml` that sets up all databases, RabbitMQ, Eureka, and the Spring Boot microservices automatically.
 
-
-\### Protected APIs
-
-Protected endpoints require a valid JWT token in the header. The JWT is generated in the \*\*user-service\*\* and validated at the API Gateway before accessing secured endpoints.
-
-```http
-
-Authorization: Bearer <jwt\_token>
-
+Clean any previous ghost volumes and start the cluster:
+```bash
+docker volume prune -f
+docker-compose up -d --build
 ```
+Your gateway should now be running on 👉 `http://localhost:8080` (Wait ~60 seconds for Eureka to register all services).
 
+### 3️⃣ Run Manually (Local IDE Setup)
+If running without Docker, you must spin up instances of MySQL and RabbitMQ, then start the services in this strict order:
+1. `service-registry`
+2. `config-server`
+3. `user-service`, `operator-service`, `payment-service`, `notification-service`
+4. `recharge-service`
+5. `api-gateway`
 
+---
 
-\---
+## 🧠 How It Works (The Golden Flow)
 
+1. **Authentication:** Users register and login via the API Gateway to the User Service, receiving a JWT token.
+2. **Secure Access:** The user submits a recharge request to the API Gateway with the JWT in the `Authorization: Bearer` header.
+3. **Validation:** The Gateway validates the token and routes the request to the Recharge Service.
+4. **Orchestration:** The Recharge Service synchronously asks the Operator Service (via OpenFeign) if the plan is valid, then tells the Payment Service to process the transaction.
+5. **Event Trigger:** Upon success, a message is dropped into RabbitMQ.
+6. **Notification:** The Notification Service asynchronously picks up the message and logs a success alert.
 
+---
 
-\## 🔄 6. Service Communication
+## 🧑‍💻 Contributions
 
+Contributions are always welcome and appreciated! ❤️  
+Whether it’s adding a new microservice (like an Analytics service), improving CI/CD pipelines, or enhancing testing — every contribution helps **OmniCharge** grow.
 
+### 🔧 Steps to Contribute
 
-\### Synchronous Communication (REST)
+1. **Fork the Repository** Click on the **Fork** button at the top-right corner of this repository page.
+2. **Clone Your Fork**
+   ```bash
+   git clone [https://github.com/](https://github.com/)<your-username>/OmniCharge.git
+   cd OmniCharge
+   ```
+3. **Create a New Branch**
+   ```bash
+   git checkout -b feature-name
+   ```
+4. **Make Your Changes** Ensure your code is clean, well-formatted, and follows best practices for distributed systems.
+5. **Commit Your Changes**
+   ```bash
+   git add .
+   git commit -m "Added: description of your feature or fix"
+   ```
+6. **Push to Your Branch**
+   ```bash
+   git push origin feature-name
+   ```
+7. **Open a Pull Request (PR)** Submit the PR for review with a clear title and description.
 
-Using \*\*OpenFeign\*\*, the Recharge Service communicates synchronously with:
+> “Good code tells a story — make sure yours is readable, meaningful, and easy to follow.” ✨
 
-\- \*\*Operator Service\*\* → To validate the selected telecom plan.
+---
 
-\- \*\*Payment Service\*\* → To process the payment.
+## 🐞 Troubleshooting
 
+If you encounter issues while running or building the cluster, try the following:
 
+1. 🔑 **401/403 Unauthorized Errors:** - Ensure you are passing the JWT token correctly in the header: `Authorization: Bearer <token>`.
+   - Ensure the `jwt.secret` matches exactly between the `api-gateway` and `user-service` configurations.
 
-\### Asynchronous Communication (RabbitMQ)
+2. 🐳 **Docker Port Conflicts:** - If a container fails to start, ensure ports `8080`, `3306`, `5672`, and `8761` are not being used by local instances of MySQL, RabbitMQ, or Tomcat on your host machine.
 
-The Recharge Service publishes a success event to decouple notifications:
+3. 🧹 **Ghost Data / Corrupted Database State:** - Docker volumes can cache old MySQL passwords or states. Wipe them completely with:  
+     `docker-compose down -v` followed by `docker volume prune -f`.
 
-\- \*\*Queue Name:\*\* `rechargeQueue`
+4. 🧱 **Service Cannot Find Eureka:** - Microservices take time to register. If the API Gateway returns a `503 Service Unavailable`, wait 30-60 seconds and check `http://localhost:8761` to ensure the service is "UP".
 
-\- The \*\*Notification Service\*\* listens to this event and processes it asynchronously.
+---
 
+> 💡 **Tip:** > If the issue persists, open a [GitHub Issue](https://github.com/soumyadeepmandal2003/OmniCharge/issues) describing your problem.  
+> Include Docker logs (`docker logs <container-name>`) and steps to reproduce it!
 
+---
 
-\---
+## 🌟 Acknowledgements
 
+- [**Spring Cloud**](https://spring.io/projects/spring-cloud) — for powerful microservices tooling.
+- [**RabbitMQ**](https://www.rabbitmq.com/) — for robust asynchronous messaging.
+- [**Docker**](https://www.docker.com/) — for making deployment a breeze.
+- [**Mockito & JUnit**](https://site.mockito.org/) — for reliable unit testing frameworks.
 
+---
 
-\## 🚀 7. How to Run (Deployment)
+## 💡 Author
 
+**👨‍💻 Soumyadeep Mandal** [GitHub](https://github.com/soumyadeepmandal2003) • [LinkedIn](https://www.linkedin.com/in/soumyadeep2003/)  
 
-
-\### Prerequisites
-
-\- Java 17 \& Maven
-
-\- Docker \& Docker Desktop
-
-\- MySQL \& RabbitMQ (if running locally without Docker)
-
-
-
-\### Option A: The "One-Click" Docker Launch (Recommended)
-
-The entire infrastructure and application stack is orchestrated via Docker Compose.
-
-
-
-1\. Clone the repository:
-
-&#x20;  ```bash
-
-&#x20;  git clone \[https://github.com/your-username/OmniCharge.git](https://github.com/your-username/OmniCharge.git)
-
-&#x20;  cd OmniCharge
-
-&#x20;  ```
-
-2\. Start the cluster:
-
-&#x20;  ```bash
-
-&#x20;  docker volume prune -f
-
-&#x20;  docker-compose up -d --build
-
-&#x20;  ```
-
-3\. Wait \~60 seconds for Eureka and MySQL to initialize. Check the Eureka Dashboard at `http://localhost:8761`.
-
-
-
-\### Option B: Local Manual Run Order
-
-If running locally via your IDE, execute the following SQL commands first:
-
-```sql
-
-CREATE DATABASE omnicharge\_user;
-
-CREATE DATABASE omnicharge\_operator;
-
-CREATE DATABASE omnicharge\_recharge;
-
-CREATE DATABASE omnicharge\_payment;
-
-```
-
-Then start the services in this exact sequence:
-
-1\. `service-registry`
-
-2\. `config-server`
-
-3\. `mysql` \& `rabbitmq` (Ensure background services are running)
-
-4\. `user-service`, `operator-service`, `payment-service`, `notification-service`
-
-5\. `recharge-service`
-
-6\. `api-gateway`
-
-
-
-\---
-
-
-
-\## 🛣️ 8. The "Golden Flow" (Testing the APIs)
-
-
-
-All requests must go through the API Gateway: `http://localhost:8080`
-
-
-
-\### 1. Register User
-
-```http
-
-POST /auth/register
-
-```
-
-```json
-
-{
-
-&#x20; "name": "Soumyadeep",
-
-&#x20; "email": "soumyadeep@gmail.com",
-
-&#x20; "password": "1234"
-
-}
-
-```
-
-
-
-\### 2. Login \& Get JWT
-
-```http
-
-POST /auth/login
-
-```
-
-```json
-
-{
-
-&#x20; "email": "soumyadeep@gmail.com",
-
-&#x20; "password": "1234"
-
-}
-
-```
-
-\*Response will contain your \*\*JWT TOKEN\*\*. Copy this for the next step.\*
-
-
-
-\### 3. Create Operator \& Plan
-
-```http
-
-POST /operators
-
-POST /operators/plans
-
-```
-
-
-
-\### 4. Initiate Secure Recharge
-
-```http
-
-POST /recharge
-
-Authorization: Bearer <token>
-
-```
-
-```json
-
-{
-
-&#x20; "mobileNumber": "9876543210",
-
-&#x20; "operatorId": 1,
-
-&#x20; "planId": 1
-
-}
-
-```
-
-
-
-\---
-
-
-
-\## 🔔 9. Event-Driven Flow
-
-
-
-A successful recharge triggers an asynchronous event:
-
-
-
-```text
-
-Recharge Service  ──▶  RabbitMQ  ──▶  Notification Service
-
-```
-
-\*\*Console Output (Notification Service):\*\*
-
-> `Recharge successful for 9876543210`
-
-
-
-\---
-
-
-
-\## 📊 10. Monitoring \& Docker Support
-
-
-
-\*\*Actuator Endpoints:\*\*
-
-Check the health and info of your services:
-
-\* `/actuator/health`
-
-\* `/actuator/info`
-
-
-
-\*\*Docker Support:\*\*
-
-Each microservice includes a `Dockerfile` for easy containerization. Example:
-
-```dockerfile
-
-FROM openjdk:17
-
-COPY target/app.jar app.jar
-
-ENTRYPOINT \["java","-jar","/app.jar"]
-
-```
-
-
-
-\---
-
-
-
-\## 🧪 11. Unit Testing
-
-
-
-Testing is implemented using \*\*JUnit 5\*\* and \*\*Mockito\*\*.
-
-\* Example: `RechargeServiceTest`
-
-\* Business logic is tested completely independently of the database and external APIs using isolated mocks.
-
-
-
-\---
-
-
-
-\## ⭐ 12. Key Highlights \& Learning Outcomes
-
-
-
-\*\*Key Features:\*\*
-
-\- ✔️ Microservices Architecture
-
-\- ✔️ JWT Authentication \& API Gateway Routing
-
-\- ✔️ Eureka Service Discovery
-
-\- ✔️ OpenFeign Communication
-
-\- ✔️ RabbitMQ Messaging
-
-\- ✔️ Docker Ready \& JUnit Tested
-
-
-
-\*\*Learning Outcomes:\*\*
-
-\- Designing and implementing a robust distributed system.
-
-\- Designing secure REST APIs and applying layered architecture principles.
-
-\- Utilizing the Spring Cloud ecosystem for configuration and discovery.
-
-\- Implementing event-driven, asynchronous communication.
-
-
-
-\---
-
-
-
-\## 👨‍💻 13. Developer Details
-
-
-
-\*\*Developed by:\*\* Soumyadeep Mandal  
-
-\*\*Role:\*\* Backend Developer / Microservices Architect  
-
-\*\*Connect:\*\* \[LinkedIn Profile](#) | \[Portfolio](#)
-
+> *“Architecting Scalability, One Service at a Time.”* 🌐
