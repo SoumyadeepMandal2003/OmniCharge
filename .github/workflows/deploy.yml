@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean
+name: Deploy to Azure VM
 
 on:
   push:
@@ -7,19 +7,19 @@ on:
 
 jobs:
   deploy:
-    name: SSH Deploy to DigitalOcean Droplet
+    name: SSH Deploy to Azure VM
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to DigitalOcean Droplet
+      - name: Deploy to Azure VM
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DO_DROPLET_IP }}
-          username: root
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
           script: |
             cd ~/OmniCharge
             git pull origin main
