@@ -1,655 +1,2717 @@
 {
   "info": {
+    "_postman_id": "omnicharge-collection-v1",
     "name": "OmniCharge API",
-    "description": "Complete API collection for OmniCharge microservices platform.\n\n## Setup\n1. Set the `baseUrl` variable to `http://localhost:8080`\n2. Register a user, then login\n3. Copy the `accessToken` from the login response and set it in the collection variable\n4. All protected endpoints will automatically use it via Bearer auth\n\n## Flow\n1. Auth → Register → Login (saves token)\n2. Operators → Get all operators & plans\n3. Recharge → Initiate recharge\n4. User → View history & transactions",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "omnicharge-api-collection-v1"
+    "description": "Comprehensive Postman collection for the OmniCharge microservices platform. Covers Auth, User, Operator, Recharge, Payment services with pre-request scripts, test assertions, auto-saved tokens/IDs, and negative test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "variable": [
-    { "key": "baseUrl",     "value": "http://localhost:8080", "type": "string" },
-    { "key": "accessToken", "value": "",                      "type": "string" },
-    { "key": "refreshToken","value": "",                      "type": "string" },
-    { "key": "userId",      "value": "",                      "type": "string" },
-    { "key": "rechargeId",  "value": "",                      "type": "string" },
-    { "key": "transactionId","value": "",                     "type": "string" },
-    { "key": "operatorId",  "value": "1",                     "type": "string" },
-    { "key": "planId",      "value": "1",                     "type": "string" }
-  ],
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
   },
+  "variable": [
+    { "key": "baseUrl",        "value": "http://4.186.25.145:8080", "type": "string" },
+    { "key": "accessToken",    "value": "",                          "type": "string" },
+    { "key": "refreshToken",   "value": "",                          "type": "string" },
+    { "key": "adminAccessToken","value": "",                         "type": "string" },
+    { "key": "userId",         "value": "",                          "type": "string" },
+    { "key": "adminUserId",    "value": "",                          "type": "string" },
+    { "key": "operatorId",     "value": "",                          "type": "string" },
+    { "key": "planId",         "value": "",                          "type": "string" },
+    { "key": "rechargeId",     "value": "",                          "type": "string" },
+    { "key": "transactionId",  "value": "",                          "type": "string" }
+  ],
   "item": [
+
     {
       "name": "🔐 Auth Service",
-      "description": "Authentication endpoints — register, login, token management",
+      "description": "Authentication endpoints — register, login, token management, password change, logout. No auth required unless noted.",
       "item": [
         {
-          "name": "Register User",
+          "name": "01 Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@omnicharge.com\",\n  \"password\": \"Test@1234\",\n  \"fullName\": \"Test User\",\n  \"mobile\": \"9876543210\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Register User] Sending registration request for testuser@omnicharge.com');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const res = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
-                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
-                  "    pm.collectionVariables.set('userId', res.user.userId);",
-                  "    pm.test('User registered successfully', () => pm.response.to.have.status(201));",
-                  "    console.log('Tokens saved. userId:', res.user.userId);",
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has refreshToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('refreshToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has user object with userId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('user');",
+                  "    pm.expect(json.user).to.have.property('userId');",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    console.log('[Register User] accessToken saved');",
+                  "}",
+                  "if (json.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    console.log('[Register User] refreshToken saved');",
+                  "}",
+                  "if (json.user && json.user.userId) {",
+                  "    pm.collectionVariables.set('userId', json.user.userId.toString());",
+                  "    console.log('[Register User] userId saved:', json.user.userId);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\",\n  \"fullName\": \"John Doe\",\n  \"mobile\": \"9876543210\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] }
-          }
+          ]
         },
         {
-          "name": "Register Admin",
+          "name": "02 Register Admin",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@omnicharge.com\",\n  \"password\": \"Admin@1234\",\n  \"fullName\": \"Admin User\",\n  \"mobile\": \"9000000001\",\n  \"role\": \"ADMIN\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] }
-          }
-        },
-        {
-          "name": "Login",
+            "auth": { "type": "noauth" }
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Register Admin] Sending admin registration request for admin@omnicharge.com');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const res = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
-                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
-                  "    pm.collectionVariables.set('userId', res.user.userId);",
-                  "    pm.test('Login successful', () => pm.response.to.have.status(200));",
-                  "    console.log('Logged in. userId:', res.user.userId, '| role:', res.user.role);",
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has user with ADMIN role', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user).to.have.property('role').that.equals('ADMIN');",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('adminAccessToken', json.accessToken);",
+                  "    console.log('[Register Admin] adminAccessToken saved');",
+                  "}",
+                  "if (json.user && json.user.userId) {",
+                  "    pm.collectionVariables.set('adminUserId', json.user.userId.toString());",
+                  "    console.log('[Register Admin] adminUserId saved:', json.user.userId);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "03 Login User",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\"\n}"
+              "raw": "{\n  \"email\": \"testuser@omnicharge.com\",\n  \"password\": \"Test@1234\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
-          }
-        },
-        {
-          "name": "Login as Admin",
+            "auth": { "type": "noauth" }
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Login User] Logging in as testuser@omnicharge.com');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const res = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
-                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
-                  "    pm.collectionVariables.set('userId', res.user.userId);",
-                  "    pm.test('Admin login successful', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has refreshToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('refreshToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has tokenType Bearer', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.tokenType).to.equal('Bearer');",
+                  "});",
+                  "",
+                  "pm.test('Response has user object', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('user');",
+                  "    pm.expect(json.user).to.have.property('userId');",
+                  "    pm.expect(json.user).to.have.property('email');",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    console.log('[Login User] accessToken updated');",
+                  "}",
+                  "if (json.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    console.log('[Login User] refreshToken updated');",
+                  "}",
+                  "if (json.user && json.user.userId) {",
+                  "    pm.collectionVariables.set('userId', json.user.userId.toString());",
+                  "    console.log('[Login User] userId updated:', json.user.userId);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "04 Login Admin",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@omnicharge.com\",\n  \"password\": \"Admin@1234\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
-          }
-        },
-        {
-          "name": "Refresh Token",
+            "auth": { "type": "noauth" }
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Login Admin] Logging in as admin@omnicharge.com');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const res = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
-                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
-                  "    pm.test('Token refreshed', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Admin user has ADMIN role', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user.role).to.equal('ADMIN');",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('adminAccessToken', json.accessToken);",
+                  "    console.log('[Login Admin] adminAccessToken updated');",
+                  "}",
+                  "if (json.user && json.user.userId) {",
+                  "    pm.collectionVariables.set('adminUserId', json.user.userId.toString());",
+                  "    console.log('[Login Admin] adminUserId updated:', json.user.userId);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "05 Login - Invalid Password (Negative)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+              "raw": "{\n  \"email\": \"testuser@omnicharge.com\",\n  \"password\": \"WrongPass\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh"] }
-          }
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Login Invalid Password] Testing rejection of wrong password');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401 or 400 for wrong password', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401]);",
+                  "});",
+                  "",
+                  "pm.test('Response does not contain accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.not.have.property('accessToken');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Validate Token",
+          "name": "06 Login - Invalid Email Format (Negative)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"notanemail\",\n  \"password\": \"Test@1234\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Login Invalid Email] Testing rejection of malformed email');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request for invalid email format', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response does not contain accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.not.have.property('accessToken');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 Validate Token",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": { "raw": "{{baseUrl}}/api/auth/validate", "host": ["{{baseUrl}}"], "path": ["api","auth","validate"] }
-          }
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"currentPassword\": \"Password@123\",\n  \"newPassword\": \"NewPassword@456\"\n}"
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/validate", "host": ["{{baseUrl}}"], "path": ["api","auth","validate"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) { console.warn('[Validate Token] accessToken is empty — run Login User first'); }",
+                  "else { console.log('[Validate Token] Validating token:', token.substring(0, 20) + '...'); }"
+                ]
+              }
             },
-            "url": { "raw": "{{baseUrl}}/api/auth/password", "host": ["{{baseUrl}}"], "path": ["api","auth","password"] }
-          }
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has valid: true', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('valid', true);",
+                  "});",
+                  "",
+                  "pm.test('Response has email field', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('email').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has userId field', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('userId');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Logout",
+          "name": "08 Refresh Token",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh"] },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] }
-          }
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var rt = pm.collectionVariables.get('refreshToken');",
+                  "if (!rt) { console.warn('[Refresh Token] refreshToken is empty — run Login User first'); }",
+                  "else { console.log('[Refresh Token] Using refreshToken:', rt.substring(0, 20) + '...'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has new accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has new refreshToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('refreshToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    console.log('[Refresh Token] accessToken updated');",
+                  "}",
+                  "if (json.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    console.log('[Refresh Token] refreshToken updated');",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Logout All Devices",
+          "name": "09 Change Password",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/password", "host": ["{{baseUrl}}"], "path": ["api","auth","password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Test@1234\",\n  \"newPassword\": \"NewTest@1234\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Change Password] Changing password for current user');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 Login with New Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@omnicharge.com\",\n  \"password\": \"NewTest@1234\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Login New Password] Verifying login works with new password');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    console.log('[Login New Password] accessToken updated');",
+                  "}",
+                  "if (json.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    console.log('[Login New Password] refreshToken updated');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 Logout All",
+          "request": {
             "method": "POST",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/api/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["api","auth","logout-all"] }
-          }
+            "url": { "raw": "{{baseUrl}}/api/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["api","auth","logout-all"] },
+            "body": { "mode": "raw", "raw": "" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Logout All] Revoking all sessions for current user');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 Login After Logout All",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@omnicharge.com\",\n  \"password\": \"NewTest@1234\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Login After Logout All] Re-authenticating after logout-all');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    console.log('[Login After Logout All] accessToken updated');",
+                  "}",
+                  "if (json.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    console.log('[Login After Logout All] refreshToken updated');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13 Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var rt = pm.collectionVariables.get('refreshToken');",
+                  "if (!rt) { console.warn('[Logout] refreshToken is empty'); }",
+                  "else { console.log('[Logout] Revoking refreshToken:', rt.substring(0, 20) + '...'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14 Login Final",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@omnicharge.com\",\n  \"password\": \"NewTest@1234\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Login Final] Final login to get fresh tokens for remaining tests');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('accessToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has refreshToken', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('refreshToken').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has user object', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('user');",
+                  "    pm.expect(json.user).to.have.property('userId');",
+                  "    pm.expect(json.user).to.have.property('email');",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    console.log('[Login Final] accessToken updated');",
+                  "}",
+                  "if (json.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    console.log('[Login Final] refreshToken updated');",
+                  "}",
+                  "if (json.user && json.user.userId) {",
+                  "    pm.collectionVariables.set('userId', json.user.userId.toString());",
+                  "    console.log('[Login Final] userId updated:', json.user.userId);",
+                  "}"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
+
     {
       "name": "👤 User Service",
-      "description": "User profile management, recharge history, transaction history",
+      "description": "User profile management, admin user listing, and dashboard history endpoints. Requires Bearer auth.",
       "item": [
         {
-          "name": "Get My Profile",
+          "name": "15 Get My Profile",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api","users","me"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get My Profile] Fetching profile for current user');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "});",
+                  "",
+                  "pm.test('Response has email', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('email').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has fullName', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('fullName').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has mobile', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('mobile').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has role', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('role').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Email matches testuser@omnicharge.com', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.email).to.equal('testuser@omnicharge.com');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Update My Profile",
+          "name": "16 Update My Profile",
           "request": {
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api","users","me"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"John Updated Doe\",\n  \"mobile\": \"9876543211\"\n}"
+              "raw": "{\n  \"fullName\": \"Test User Updated\",\n  \"mobile\": \"9876543211\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Update My Profile] Updating fullName and mobile');"
+                ]
+              }
             },
-            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api","users","me"] }
-          }
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('fullName is updated', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.fullName).to.equal('Test User Updated');",
+                  "});",
+                  "",
+                  "pm.test('mobile is updated', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.mobile).to.equal('9876543211');",
+                  "});",
+                  "",
+                  "pm.test('Response still has id and email', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.expect(json).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get User by ID",
+          "name": "17 Get User by ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","users","{{userId}}"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var uid = pm.collectionVariables.get('userId');",
+                  "if (!uid) { console.warn('[Get User by ID] userId is empty — run Login User first'); }",
+                  "else { console.log('[Get User by ID] Fetching user:', uid); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response id matches userId variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    var expectedId = parseInt(pm.collectionVariables.get('userId'));",
+                  "    pm.expect(json.id).to.equal(expectedId);",
+                  "});",
+                  "",
+                  "pm.test('Response has email', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('email').that.is.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get All Users (Admin)",
+          "name": "18 Get All Users - Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/admin/users", "host": ["{{baseUrl}}"], "path": ["api","admin","users"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var adminToken = pm.collectionVariables.get('adminAccessToken');",
+                  "if (!adminToken) { console.warn('[Get All Users Admin] adminAccessToken is empty — run Login Admin first'); }",
+                  "else { console.log('[Get All Users Admin] Using adminAccessToken'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Array has at least one user', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "19 Get All Users - Unauthorized (Negative)",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/admin/users", "host": ["{{baseUrl}}"], "path": ["api","admin","users"] }
-          }
-        },
-        {
-          "name": "My Recharge History",
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get All Users Unauthorized] Testing that regular user cannot access admin endpoint');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const res = pm.response.json();",
-                  "    if (res.length > 0) {",
-                  "        pm.collectionVariables.set('rechargeId', res[0].rechargeId);",
-                  "        console.log('First rechargeId saved:', res[0].rechargeId);",
+                  "pm.test('Status is 403 Forbidden for non-admin user', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Response does not contain user list', function () {",
+                  "    var body = pm.response.text();",
+                  "    try {",
+                  "        var json = JSON.parse(body);",
+                  "        pm.expect(json).to.not.be.an('array');",
+                  "    } catch(e) {",
+                  "        // Non-JSON 403 response is also acceptable",
+                  "        pm.expect(true).to.be.true;",
                   "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "});"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "20 My Recharge History (empty)",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/users/me/recharges", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges"] }
-          }
-        },
-        {
-          "name": "Get Specific Recharge",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/users/me/recharges/{{rechargeId}}", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges","{{rechargeId}}"] }
-          }
-        },
-        {
-          "name": "My Transaction History",
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[My Recharge History Empty] Checking recharge history before any recharge');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const res = pm.response.json();",
-                  "    if (res.length > 0) {",
-                  "        pm.collectionVariables.set('transactionId', res[0].transactionId);",
-                  "        console.log('First transactionId saved:', res[0].transactionId);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "console.log('[My Recharge History Empty] Current recharge count:', pm.response.json().length);"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "21 My Transaction History (empty)",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/users/me/transactions", "host": ["{{baseUrl}}"], "path": ["api","users","me","transactions"] }
-          }
-        },
-        {
-          "name": "Get Transaction Status",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/users/me/transactions/{{transactionId}}", "host": ["{{baseUrl}}"], "path": ["api","users","me","transactions","{{transactionId}}"] }
-          }
-        },
-        {
-          "name": "Get Transaction for Recharge",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/users/me/recharges/{{rechargeId}}/transaction", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges","{{rechargeId}}","transaction"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[My Transaction History Empty] Checking transaction history before any recharge');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "console.log('[My Transaction History Empty] Current transaction count:', pm.response.json().length);"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
+
     {
       "name": "📡 Operator Service",
-      "description": "Telecom operators and recharge plans — public read, admin write",
+      "description": "Telecom operator and recharge plan management. Public GET endpoints; admin POST/PUT/DELETE require ADMIN role.",
       "item": [
         {
-          "name": "Get All Operators",
+          "name": "22 Get All Operators (empty)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/operators", "host": ["{{baseUrl}}"], "path": ["api","operators"] },
+            "auth": { "type": "noauth" }
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get All Operators Empty] Fetching operators before any are created');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const res = pm.response.json();",
-                  "    if (res.length > 0) {",
-                  "        pm.collectionVariables.set('operatorId', res[0].id);",
-                  "        console.log('First operatorId saved:', res[0].id, '|', res[0].name);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "console.log('[Get All Operators Empty] Operator count:', pm.response.json().length);"
+                ]
               }
             }
-          ],
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/operators", "host": ["{{baseUrl}}"], "path": ["api","operators"] }
-          }
+          ]
         },
         {
-          "name": "Get Operator by ID",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","operators","{{operatorId}}"] }
-          }
-        },
-        {
-          "name": "Get All Plans",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const res = pm.response.json();",
-                  "    if (res.length > 0) {",
-                  "        pm.collectionVariables.set('planId', res[0].id);",
-                  "        console.log('First planId saved:', res[0].id, '|', res[0].name, '| price:', res[0].price);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/plans", "host": ["{{baseUrl}}"], "path": ["api","plans"] }
-          }
-        },
-        {
-          "name": "Get Plan by ID",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/plans/{{planId}}", "host": ["{{baseUrl}}"], "path": ["api","plans","{{planId}}"] }
-          }
-        },
-        {
-          "name": "Get Plans by Operator",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/operators/{{operatorId}}/plans", "host": ["{{baseUrl}}"], "path": ["api","operators","{{operatorId}}","plans"] }
-          }
-        },
-        {
-          "name": "Create Operator (Admin)",
+          "name": "23 Create Operator - Unauthorized (Negative)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/operators", "host": ["{{baseUrl}}"], "path": ["api","admin","operators"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Jio\",\n  \"code\": \"JIO\",\n  \"description\": \"Reliance Jio Infocomm Limited\"\n}"
+              "raw": "{\n  \"name\": \"Jio\",\n  \"code\": \"JIO\",\n  \"description\": \"Reliance Jio\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Create Operator Unauthorized] Testing that regular user cannot create operators');"
+                ]
+              }
             },
-            "url": { "raw": "{{baseUrl}}/api/admin/operators", "host": ["{{baseUrl}}"], "path": ["api","admin","operators"] }
-          }
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403 Forbidden for non-admin user', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Update Operator (Admin)",
+          "name": "24 Create Operator - Admin (Jio)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/admin/operators", "host": ["{{baseUrl}}"], "path": ["api","admin","operators"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jio\",\n  \"code\": \"JIO\",\n  \"description\": \"Reliance Jio Infocomm\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var adminToken = pm.collectionVariables.get('adminAccessToken');",
+                  "if (!adminToken) { console.warn('[Create Operator Admin] adminAccessToken is empty — run Login Admin first'); }",
+                  "else { console.log('[Create Operator Admin] Creating Jio operator'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "});",
+                  "",
+                  "pm.test('Response has correct name', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.name).to.equal('Jio');",
+                  "});",
+                  "",
+                  "pm.test('Response has correct code', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.equal('JIO');",
+                  "});",
+                  "",
+                  "pm.test('Operator is active', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.active).to.be.true;",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "    pm.collectionVariables.set('operatorId', json.id.toString());",
+                  "    console.log('[Create Operator Admin] operatorId saved:', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "25 Create Operator 2 - Admin (Airtel)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/admin/operators", "host": ["{{baseUrl}}"], "path": ["api","admin","operators"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Airtel\",\n  \"code\": \"AIRTEL\",\n  \"description\": \"Bharti Airtel\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Create Operator 2 Admin] Creating Airtel operator');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "});",
+                  "",
+                  "pm.test('Response has correct name Airtel', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.name).to.equal('Airtel');",
+                  "});",
+                  "",
+                  "pm.test('Operator is active', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.active).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "26 Get All Operators",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/operators", "host": ["{{baseUrl}}"], "path": ["api","operators"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get All Operators] Fetching all operators after creation');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Array has at least 1 operator', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Each operator has id, name, code', function () {",
+                  "    var json = pm.response.json();",
+                  "    json.forEach(function(op) {",
+                  "        pm.expect(op).to.have.property('id');",
+                  "        pm.expect(op).to.have.property('name');",
+                  "        pm.expect(op).to.have.property('code');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "27 Get Operator by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","operators","{{operatorId}}"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var oid = pm.collectionVariables.get('operatorId');",
+                  "if (!oid) { console.warn('[Get Operator by ID] operatorId is empty — run Create Operator first'); }",
+                  "else { console.log('[Get Operator by ID] Fetching operator:', oid); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response id matches operatorId variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    var expectedId = parseInt(pm.collectionVariables.get('operatorId'));",
+                  "    pm.expect(json.id).to.equal(expectedId);",
+                  "});",
+                  "",
+                  "pm.test('Response has name and code', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('name').that.is.a('string').and.not.empty;",
+                  "    pm.expect(json).to.have.property('code').that.is.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "28 Update Operator - Admin",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/admin/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","operators","{{operatorId}}"] },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Jio Updated\",\n  \"code\": \"JIO\",\n  \"description\": \"Updated description\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/admin/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","operators","{{operatorId}}"] }
-          }
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var oid = pm.collectionVariables.get('operatorId');",
+                  "console.log('[Update Operator Admin] Updating operator:', oid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Name is updated', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.name).to.equal('Jio Updated');",
+                  "});",
+                  "",
+                  "pm.test('Code remains JIO', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.equal('JIO');",
+                  "});",
+                  "",
+                  "pm.test('Description is updated', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.description).to.equal('Updated description');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Deactivate Operator (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/admin/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","operators","{{operatorId}}"] }
-          }
-        },
-        {
-          "name": "Create Plan (Admin)",
+          "name": "29 Create Plan - Admin",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/admin/plans", "host": ["{{baseUrl}}"], "path": ["api","admin","plans"] },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Unlimited 28 Days\",\n  \"price\": 239.00,\n  \"validityDays\": 28,\n  \"data\": \"1.5GB/day\",\n  \"calls\": \"Unlimited\",\n  \"sms\": \"100/day\",\n  \"description\": \"Popular prepaid plan\",\n  \"type\": \"PREPAID\",\n  \"operatorId\": {{operatorId}}\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/admin/plans", "host": ["{{baseUrl}}"], "path": ["api","admin","plans"] }
-          }
-        },
-        {
-          "name": "Deactivate Plan (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/admin/plans/{{planId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","plans","{{planId}}"] }
-          }
-        }
-      ]
-    },
-    {
-      "name": "🔋 Recharge Service",
-      "description": "Mobile recharge operations",
-      "item": [
-        {
-          "name": "Initiate Recharge",
+            "auth": { "type": "noauth" }
+          },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var oid = pm.collectionVariables.get('operatorId');",
+                  "if (!oid) { console.warn('[Create Plan Admin] operatorId is empty — run Create Operator first'); }",
+                  "else { console.log('[Create Plan Admin] Creating plan for operatorId:', oid); }"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const res = pm.response.json();",
-                  "    pm.collectionVariables.set('rechargeId', res.rechargeId);",
-                  "    pm.test('Recharge initiated', () => pm.response.to.have.status(201));",
-                  "    console.log('rechargeId saved:', res.rechargeId, '| status:', res.status);",
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "});",
+                  "",
+                  "pm.test('Response has correct name', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.name).to.equal('Unlimited 28 Days');",
+                  "});",
+                  "",
+                  "pm.test('Response has price', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('price');",
+                  "    pm.expect(parseFloat(json.price)).to.equal(239.00);",
+                  "});",
+                  "",
+                  "pm.test('Response has validityDays 28', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.validityDays).to.equal(28);",
+                  "});",
+                  "",
+                  "pm.test('Plan is active', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.active).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('operatorId matches', function () {",
+                  "    var json = pm.response.json();",
+                  "    var expectedOpId = parseInt(pm.collectionVariables.get('operatorId'));",
+                  "    pm.expect(json.operatorId).to.equal(expectedOpId);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "    pm.collectionVariables.set('planId', json.id.toString());",
+                  "    console.log('[Create Plan Admin] planId saved:', json.id);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "30 Create Plan 2 - Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/admin/plans", "host": ["{{baseUrl}}"], "path": ["api","admin","plans"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Basic 14 Days\",\n  \"price\": 99.00,\n  \"validityDays\": 14,\n  \"data\": \"500MB/day\",\n  \"calls\": \"100 mins/day\",\n  \"sms\": \"50/day\",\n  \"description\": \"Basic plan\",\n  \"type\": \"PREPAID\",\n  \"operatorId\": {{operatorId}}\n}"
+            },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Create Plan 2 Admin] Creating Basic 14 Days plan');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "});",
+                  "",
+                  "pm.test('Response has correct name', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.name).to.equal('Basic 14 Days');",
+                  "});",
+                  "",
+                  "pm.test('Price is 99', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(parseFloat(json.price)).to.equal(99.00);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "31 Get All Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/plans", "host": ["{{baseUrl}}"], "path": ["api","plans"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get All Plans] Fetching all active plans');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Array has at least 1 plan', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Each plan has id, name, price, validityDays', function () {",
+                  "    var json = pm.response.json();",
+                  "    json.forEach(function(plan) {",
+                  "        pm.expect(plan).to.have.property('id');",
+                  "        pm.expect(plan).to.have.property('name');",
+                  "        pm.expect(plan).to.have.property('price');",
+                  "        pm.expect(plan).to.have.property('validityDays');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "32 Get Plan by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/plans/{{planId}}", "host": ["{{baseUrl}}"], "path": ["api","plans","{{planId}}"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var pid = pm.collectionVariables.get('planId');",
+                  "if (!pid) { console.warn('[Get Plan by ID] planId is empty — run Create Plan first'); }",
+                  "else { console.log('[Get Plan by ID] Fetching plan:', pid); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response id matches planId variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    var expectedId = parseInt(pm.collectionVariables.get('planId'));",
+                  "    pm.expect(json.id).to.equal(expectedId);",
+                  "});",
+                  "",
+                  "pm.test('Response has name, price, validityDays', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('name');",
+                  "    pm.expect(json).to.have.property('price');",
+                  "    pm.expect(json).to.have.property('validityDays');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "33 Get Plans by Operator",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/operators/{{operatorId}}/plans", "host": ["{{baseUrl}}"], "path": ["api","operators","{{operatorId}}","plans"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var oid = pm.collectionVariables.get('operatorId');",
+                  "console.log('[Get Plans by Operator] Fetching plans for operatorId:', oid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('All plans belong to the requested operator', function () {",
+                  "    var json = pm.response.json();",
+                  "    var expectedOpId = parseInt(pm.collectionVariables.get('operatorId'));",
+                  "    json.forEach(function(plan) {",
+                  "        pm.expect(plan.operatorId).to.equal(expectedOpId);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "🔋 Recharge Service",
+      "description": "Mobile recharge initiation and history. Requires Bearer auth. Mobile number must match Indian format (starts with 6-9, 10 digits).",
+      "item": [
+        {
+          "name": "34 Initiate Recharge",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/recharges", "host": ["{{baseUrl}}"], "path": ["api","recharges"] },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"mobileNumber\": \"9876543210\",\n  \"operatorId\": {{operatorId}},\n  \"planId\": {{planId}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var oid = pm.collectionVariables.get('operatorId');",
+                  "var pid = pm.collectionVariables.get('planId');",
+                  "if (!oid || !pid) {",
+                  "    console.warn('[Initiate Recharge] operatorId or planId is empty — run Operator/Plan creation first');",
+                  "} else {",
+                  "    console.log('[Initiate Recharge] Initiating recharge for 9876543210, operatorId:', oid, 'planId:', pid);",
+                  "}"
+                ]
+              }
             },
-            "url": { "raw": "{{baseUrl}}/api/recharges", "host": ["{{baseUrl}}"], "path": ["api","recharges"] }
-          }
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has rechargeId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('rechargeId').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has status field', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has mobileNumber', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.mobileNumber).to.equal('9876543210');",
+                  "});",
+                  "",
+                  "pm.test('Response has amount', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('amount');",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.rechargeId) {",
+                  "    pm.collectionVariables.set('rechargeId', json.rechargeId);",
+                  "    console.log('[Initiate Recharge] rechargeId saved:', json.rechargeId);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "My Recharge History",
+          "name": "35 Initiate Recharge - Invalid Mobile (Negative)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/recharges", "host": ["{{baseUrl}}"], "path": ["api","recharges"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"1234567890\",\n  \"operatorId\": {{operatorId}},\n  \"planId\": {{planId}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Initiate Recharge Invalid Mobile] Testing rejection of invalid mobile number (starts with 1)');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request for invalid mobile number', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response does not have rechargeId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.not.have.property('rechargeId');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "36 Get My Recharge History",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/recharges/history", "host": ["{{baseUrl}}"], "path": ["api","recharges","history"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get My Recharge History] Fetching recharge history for current user');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Array has at least 1 recharge', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Each recharge has rechargeId and status', function () {",
+                  "    var json = pm.response.json();",
+                  "    json.forEach(function(r) {",
+                  "        pm.expect(r).to.have.property('rechargeId');",
+                  "        pm.expect(r).to.have.property('status');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get Recharge by Recharge ID",
+          "name": "37 Get Recharge by Recharge ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/recharges/{{rechargeId}}", "host": ["{{baseUrl}}"], "path": ["api","recharges","{{rechargeId}}"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var rid = pm.collectionVariables.get('rechargeId');",
+                  "if (!rid) { console.warn('[Get Recharge by ID] rechargeId is empty — run Initiate Recharge first'); }",
+                  "else { console.log('[Get Recharge by ID] Fetching recharge:', rid); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response rechargeId matches variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.rechargeId).to.equal(pm.collectionVariables.get('rechargeId'));",
+                  "});",
+                  "",
+                  "pm.test('Response has status', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has mobileNumber', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('mobileNumber');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get Recharge by DB ID",
+          "name": "38 Get Recharge by DB ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/recharges/id/1", "host": ["{{baseUrl}}"], "path": ["api","recharges","id","1"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get Recharge by DB ID] Fetching recharge with DB id=1');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has id equal to 1', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.equal(1);",
+                  "});",
+                  "",
+                  "pm.test('Response has rechargeId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('rechargeId');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get Recharge History by User ID (Internal)",
+          "name": "39 Get Recharge History by User ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/recharges/history/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","recharges","history","user","{{userId}}"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var uid = pm.collectionVariables.get('userId');",
+                  "console.log('[Get Recharge History by User ID] Fetching history for userId:', uid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
+
     {
       "name": "💳 Payment Service",
-      "description": "Payment processing and transaction management",
+      "description": "Payment transaction lookup. Requires Bearer auth. Admin endpoints require ADMIN role.",
       "item": [
         {
-          "name": "Process Payment (Internal)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"rechargeId\": \"{{rechargeId}}\",\n  \"userId\": {{userId}},\n  \"amount\": 239.00,\n  \"description\": \"Recharge payment\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/api/payments/process", "host": ["{{baseUrl}}"], "path": ["api","payments","process"] }
-          }
-        },
-        {
-          "name": "Get Transaction by Transaction ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/api/payments/transaction/{{transactionId}}", "host": ["{{baseUrl}}"], "path": ["api","payments","transaction","{{transactionId}}"] }
-          }
-        },
-        {
-          "name": "Get Transaction by Recharge ID",
+          "name": "40 Get Transaction by Recharge ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/payments/recharge/{{rechargeId}}", "host": ["{{baseUrl}}"], "path": ["api","payments","recharge","{{rechargeId}}"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var rid = pm.collectionVariables.get('rechargeId');",
+                  "if (!rid) { console.warn('[Get Transaction by Recharge ID] rechargeId is empty — run Initiate Recharge first'); }",
+                  "else { console.log('[Get Transaction by Recharge ID] Fetching transaction for rechargeId:', rid); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has transactionId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('transactionId').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response rechargeId matches variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.rechargeId).to.equal(pm.collectionVariables.get('rechargeId'));",
+                  "});",
+                  "",
+                  "pm.test('Response has status', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has amount', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('amount');",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (json.transactionId) {",
+                  "    pm.collectionVariables.set('transactionId', json.transactionId);",
+                  "    console.log('[Get Transaction by Recharge ID] transactionId saved:', json.transactionId);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get Transactions by User ID",
+          "name": "41 Get Transaction by Transaction ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/payments/transaction/{{transactionId}}", "host": ["{{baseUrl}}"], "path": ["api","payments","transaction","{{transactionId}}"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var tid = pm.collectionVariables.get('transactionId');",
+                  "if (!tid) { console.warn('[Get Transaction by ID] transactionId is empty — run Get Transaction by Recharge ID first'); }",
+                  "else { console.log('[Get Transaction by ID] Fetching transaction:', tid); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response transactionId matches variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.transactionId).to.equal(pm.collectionVariables.get('transactionId'));",
+                  "});",
+                  "",
+                  "pm.test('Response has userId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('userId');",
+                  "});",
+                  "",
+                  "pm.test('Response has amount', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('amount');",
+                  "});",
+                  "",
+                  "pm.test('Response has status', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status').that.is.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "42 Get Transactions by User ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/payments/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","payments","user","{{userId}}"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var uid = pm.collectionVariables.get('userId');",
+                  "console.log('[Get Transactions by User ID] Fetching transactions for userId:', uid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('All transactions belong to the requested user', function () {",
+                  "    var json = pm.response.json();",
+                  "    var expectedUserId = parseInt(pm.collectionVariables.get('userId'));",
+                  "    json.forEach(function(tx) {",
+                  "        pm.expect(tx.userId).to.equal(expectedUserId);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Get All Transactions (Admin)",
+          "name": "43 Get All Transactions - Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/payments/admin/all", "host": ["{{baseUrl}}"], "path": ["api","payments","admin","all"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var adminToken = pm.collectionVariables.get('adminAccessToken');",
+                  "if (!adminToken) { console.warn('[Get All Transactions Admin] adminAccessToken is empty — run Login Admin first'); }",
+                  "else { console.log('[Get All Transactions Admin] Fetching all transactions as admin'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Array has at least 1 transaction', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "44 Get All Transactions - Unauthorized (Negative)",
           "request": {
             "method": "GET",
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/payments/admin/all", "host": ["{{baseUrl}}"], "path": ["api","payments","admin","all"] }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Get All Transactions Unauthorized] Testing that regular user cannot access admin transactions endpoint');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403 Forbidden for non-admin user', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Response does not contain transaction list', function () {",
+                  "    var body = pm.response.text();",
+                  "    try {",
+                  "        var json = JSON.parse(body);",
+                  "        pm.expect(json).to.not.be.an('array');",
+                  "    } catch(e) {",
+                  "        pm.expect(true).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
+
     {
-      "name": "🏥 Health & Monitoring",
-      "description": "Actuator health checks for all services",
+      "name": "📊 User Dashboard",
+      "description": "User-facing dashboard endpoints for viewing recharge and transaction history after a recharge has been made.",
       "item": [
         {
-          "name": "API Gateway Health",
+          "name": "45 My Recharge History (with data)",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator","health"] }
-          }
+            "url": { "raw": "{{baseUrl}}/api/users/me/recharges", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[My Recharge History With Data] Fetching recharge history after recharge was made');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Array has at least 1 recharge', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Each recharge has required fields', function () {",
+                  "    var json = pm.response.json();",
+                  "    json.forEach(function(r) {",
+                  "        pm.expect(r).to.have.property('rechargeId');",
+                  "        pm.expect(r).to.have.property('mobileNumber');",
+                  "        pm.expect(r).to.have.property('status');",
+                  "        pm.expect(r).to.have.property('amount');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Auth Service Health",
+          "name": "46 Get Specific Recharge",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://localhost:8086/actuator/health", "host": ["http://localhost:8086"], "path": ["actuator","health"] }
-          }
+            "url": { "raw": "{{baseUrl}}/api/users/me/recharges/{{rechargeId}}", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges","{{rechargeId}}"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var rid = pm.collectionVariables.get('rechargeId');",
+                  "console.log('[Get Specific Recharge] Fetching recharge:', rid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response rechargeId matches variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.rechargeId).to.equal(pm.collectionVariables.get('rechargeId'));",
+                  "});",
+                  "",
+                  "pm.test('Response has status and amount', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status');",
+                  "    pm.expect(json).to.have.property('amount');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "User Service Health",
+          "name": "47 My Transaction History (with data)",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://localhost:8081/actuator/health", "host": ["http://localhost:8081"], "path": ["actuator","health"] }
-          }
+            "url": { "raw": "{{baseUrl}}/api/users/me/transactions", "host": ["{{baseUrl}}"], "path": ["api","users","me","transactions"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[My Transaction History With Data] Fetching transaction history after recharge was made');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Array has at least 1 transaction', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Each transaction has required fields', function () {",
+                  "    var json = pm.response.json();",
+                  "    json.forEach(function(tx) {",
+                  "        pm.expect(tx).to.have.property('transactionId');",
+                  "        pm.expect(tx).to.have.property('status');",
+                  "        pm.expect(tx).to.have.property('amount');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Recharge Service Health",
+          "name": "48 Get Transaction Status",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://localhost:8082/actuator/health", "host": ["http://localhost:8082"], "path": ["actuator","health"] }
-          }
+            "url": { "raw": "{{baseUrl}}/api/users/me/transactions/{{transactionId}}", "host": ["{{baseUrl}}"], "path": ["api","users","me","transactions","{{transactionId}}"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var tid = pm.collectionVariables.get('transactionId');",
+                  "console.log('[Get Transaction Status] Fetching transaction:', tid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response transactionId matches variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.transactionId).to.equal(pm.collectionVariables.get('transactionId'));",
+                  "});",
+                  "",
+                  "pm.test('Response has status field', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status').that.is.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Payment Service Health",
+          "name": "49 Get Transaction for Recharge",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://localhost:8083/actuator/health", "host": ["http://localhost:8083"], "path": ["actuator","health"] }
-          }
+            "url": { "raw": "{{baseUrl}}/api/users/me/recharges/{{rechargeId}}/transaction", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges","{{rechargeId}}","transaction"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var rid = pm.collectionVariables.get('rechargeId');",
+                  "console.log('[Get Transaction for Recharge] Fetching transaction for rechargeId:', rid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has transactionId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('transactionId').that.is.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response rechargeId matches variable', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.rechargeId).to.equal(pm.collectionVariables.get('rechargeId'));",
+                  "});",
+                  "",
+                  "pm.test('Response has status and amount', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status');",
+                  "    pm.expect(json).to.have.property('amount');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "🏥 Health Checks",
+      "description": "Actuator health endpoints for all microservices. No auth required.",
+      "item": [
+        {
+          "name": "50 API Gateway Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator","health"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[API Gateway Health] Checking API Gateway health at', pm.collectionVariables.get('baseUrl'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is under 5000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});",
+                  "",
+                  "pm.test('Health status is UP', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Operator Service Health",
+          "name": "51 Auth Service Health",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://localhost:8084/actuator/health", "host": ["http://localhost:8084"], "path": ["actuator","health"] }
-          }
+            "url": { "raw": "http://4.186.25.145:8086/actuator/health", "raw": "http://4.186.25.145:8086/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8086", "path": ["actuator","health"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Auth Service Health] Checking Auth Service health at port 8086');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health status is UP', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Notification Service Health",
+          "name": "52 User Service Health",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://localhost:8085/actuator/health", "host": ["http://localhost:8085"], "path": ["actuator","health"] }
-          }
+            "url": { "raw": "http://4.186.25.145:8081/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8081", "path": ["actuator","health"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[User Service Health] Checking User Service health at port 8081');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health status is UP', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Eureka Dashboard",
+          "name": "53 Recharge Service Health",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://localhost:8761", "host": ["http://localhost:8761"], "path": [] }
-          }
+            "url": { "raw": "http://4.186.25.145:8082/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8082", "path": ["actuator","health"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Recharge Service Health] Checking Recharge Service health at port 8082');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health status is UP', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Swagger UI (Aggregated)",
+          "name": "54 Payment Service Health",
           "request": {
-            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/swagger-ui.html", "host": ["{{baseUrl}}"], "path": ["swagger-ui.html"] }
-          }
+            "url": { "raw": "http://4.186.25.145:8083/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8083", "path": ["actuator","health"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Payment Service Health] Checking Payment Service health at port 8083');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health status is UP', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "55 Operator Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://4.186.25.145:8084/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8084", "path": ["actuator","health"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Operator Service Health] Checking Operator Service health at port 8084');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health status is UP', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "56 Notification Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://4.186.25.145:8085/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8085", "path": ["actuator","health"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('[Notification Service Health] Checking Notification Service health at port 8085');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health status is UP', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
