@@ -1,0 +1,22 @@
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  config:
+    import: ""
+  cloud:
+    config:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+rabbitmq:
+  queue: recharge.completed.queue
+
+logging:
+  level:
+    com.omnicharge: DEBUG

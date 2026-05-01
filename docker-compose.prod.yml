@@ -1,0 +1,301 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OmniCharge — Production Stack for Oracle Cloud Free Tier (ARM64, 24GB RAM)
+#
+# Usage:
+#   cp .env.example .env          # fill in your secrets
+#   docker-compose -f docker-compose.prod.yml up -d
+#
+# Startup order is handled by healthchecks + depends_on.
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  omnicharge-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  rabbitmq_data:
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  mysql:
+    image: mysql:8.0
+    container_name: omnicharge-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: omnicharge-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: omnicharge-zipkin
+    restart: unless-stopped
+    ports:
+      - "9411:9411"
+    networks:
+      - omnicharge-net
+
+  # ── Core Platform ───────────────────────────────────────────────────────────
+
+  service-discovery:
+    build:
+      context: ./service-discovery
+      dockerfile: Dockerfile
+    image: omnicharge/service-discovery:latest
+    container_name: omnicharge-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    image: omnicharge/config-server:latest
+    container_name: omnicharge-config
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      EUREKA_URI: http://service-discovery:8761/eureka
+    depends_on:
+      service-discovery:
+        condition: service_healthy
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: omnicharge/api-gateway:latest
+    container_name: omnicharge-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URI: http://service-discovery:8761/eureka
+      JWT_SECRET: ${JWT_SECRET}
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - omnicharge-net
+
+  # ── Microservices ───────────────────────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    image: omnicharge/auth-service:latest
+    container_name: omnicharge-auth
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URI: http://service-discovery:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_auth?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - omnicharge-net
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    image: omnicharge/user-service:latest
+    container_name: omnicharge-user
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URI: http://service-discovery:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_users?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - omnicharge-net
+
+  operator-service:
+    build:
+      context: ./operator-service
+      dockerfile: Dockerfile
+    image: omnicharge/operator-service:latest
+    container_name: omnicharge-operator
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URI: http://service-discovery:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_operators?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - omnicharge-net
+
+  recharge-service:
+    build:
+      context: ./recharge-service
+      dockerfile: Dockerfile
+    image: omnicharge/recharge-service:latest
+    container_name: omnicharge-recharge
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URI: http://service-discovery:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_recharge?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - omnicharge-net
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    image: omnicharge/payment-service:latest
+    container_name: omnicharge-payment
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URI: http://service-discovery:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_payments?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - omnicharge-net
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    image: omnicharge/notification-service:latest
+    container_name: omnicharge-notification
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_URI: http://service-discovery:8761/eureka
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - omnicharge-net

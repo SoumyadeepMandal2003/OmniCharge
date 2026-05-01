@@ -1,0 +1,22 @@
+# Secrets — NEVER commit these
+.env
+
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.DS_Store
+
+# Logs
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# Docker
+.docker/

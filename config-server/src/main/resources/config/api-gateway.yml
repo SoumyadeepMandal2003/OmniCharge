@@ -1,0 +1,139 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**, /api/admin/users/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: recharge-service
+          uri: lb://recharge-service
+          predicates:
+            - Path=/api/recharges/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - JwtAuthenticationFilter
+
+        - id: operator-service
+          uri: lb://operator-service
+          predicates:
+            - Path=/api/operators/**, /api/plans/**, /api/admin/operators/**, /api/admin/plans/**
+          filters:
+            - JwtAuthenticationFilter
+
+        # ── Per-service Swagger UI routes (no JWT required) ──────────────────
+        - id: user-service-docs
+          uri: lb://user-service
+          predicates:
+            - Path=/user-service/v3/api-docs
+          filters:
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+
+        - id: recharge-service-docs
+          uri: lb://recharge-service
+          predicates:
+            - Path=/recharge-service/v3/api-docs
+          filters:
+            - RewritePath=/recharge-service/(?<segment>.*), /$\{segment}
+
+        - id: payment-service-docs
+          uri: lb://payment-service
+          predicates:
+            - Path=/payment-service/v3/api-docs
+          filters:
+            - RewritePath=/payment-service/(?<segment>.*), /$\{segment}
+
+        - id: operator-service-docs
+          uri: lb://operator-service
+          predicates:
+            - Path=/operator-service/v3/api-docs
+          filters:
+            - RewritePath=/operator-service/(?<segment>.*), /$\{segment}
+
+        - id: auth-service-docs
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth-service/v3/api-docs
+          filters:
+            - RewritePath=/auth-service/(?<segment>.*), /$\{segment}
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:OmniChargeSecretKey2024SuperSecureBase64EncodedString==}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - name: auth-service
+        url: /auth-service/v3/api-docs
+      - name: user-service
+        url: /user-service/v3/api-docs
+      - name: recharge-service
+        url: /recharge-service/v3/api-docs
+      - name: payment-service
+        url: /payment-service/v3/api-docs
+      - name: operator-service
+        url: /operator-service/v3/api-docs
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.omnicharge: DEBUG

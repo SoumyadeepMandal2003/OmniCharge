@@ -1,0 +1,657 @@
+{
+  "info": {
+    "name": "OmniCharge API",
+    "description": "Complete API collection for OmniCharge microservices platform.\n\n## Setup\n1. Set the `baseUrl` variable to `http://localhost:8080`\n2. Register a user, then login\n3. Copy the `accessToken` from the login response and set it in the collection variable\n4. All protected endpoints will automatically use it via Bearer auth\n\n## Flow\n1. Auth → Register → Login (saves token)\n2. Operators → Get all operators & plans\n3. Recharge → Initiate recharge\n4. User → View history & transactions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "omnicharge-api-collection-v1"
+  },
+  "variable": [
+    { "key": "baseUrl",     "value": "http://localhost:8080", "type": "string" },
+    { "key": "accessToken", "value": "",                      "type": "string" },
+    { "key": "refreshToken","value": "",                      "type": "string" },
+    { "key": "userId",      "value": "",                      "type": "string" },
+    { "key": "rechargeId",  "value": "",                      "type": "string" },
+    { "key": "transactionId","value": "",                     "type": "string" },
+    { "key": "operatorId",  "value": "1",                     "type": "string" },
+    { "key": "planId",      "value": "1",                     "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "🔐 Auth Service",
+      "description": "Authentication endpoints — register, login, token management",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const res = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "    pm.collectionVariables.set('userId', res.user.userId);",
+                  "    pm.test('User registered successfully', () => pm.response.to.have.status(201));",
+                  "    console.log('Tokens saved. userId:', res.user.userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\",\n  \"fullName\": \"John Doe\",\n  \"mobile\": \"9876543210\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] }
+          }
+        },
+        {
+          "name": "Register Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@omnicharge.com\",\n  \"password\": \"Admin@1234\",\n  \"fullName\": \"Admin User\",\n  \"mobile\": \"9000000001\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "    pm.collectionVariables.set('userId', res.user.userId);",
+                  "    pm.test('Login successful', () => pm.response.to.have.status(200));",
+                  "    console.log('Logged in. userId:', res.user.userId, '| role:', res.user.role);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "    pm.collectionVariables.set('userId', res.user.userId);",
+                  "    pm.test('Admin login successful', () => pm.response.to.have.status(200));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@omnicharge.com\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', res.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "    pm.test('Token refreshed', () => pm.response.to.have.status(200));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh"] }
+          }
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/validate", "host": ["{{baseUrl}}"], "path": ["api","auth","validate"] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password@123\",\n  \"newPassword\": \"NewPassword@456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/password", "host": ["{{baseUrl}}"], "path": ["api","auth","password"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] }
+          }
+        },
+        {
+          "name": "Logout All Devices",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["api","auth","logout-all"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 User Service",
+      "description": "User profile management, recharge history, transaction history",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api","users","me"] }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Updated Doe\",\n  \"mobile\": \"9876543211\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api","users","me"] }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","users","{{userId}}"] }
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/admin/users", "host": ["{{baseUrl}}"], "path": ["api","admin","users"] }
+          }
+        },
+        {
+          "name": "My Recharge History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    if (res.length > 0) {",
+                  "        pm.collectionVariables.set('rechargeId', res[0].rechargeId);",
+                  "        console.log('First rechargeId saved:', res[0].rechargeId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/me/recharges", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges"] }
+          }
+        },
+        {
+          "name": "Get Specific Recharge",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/me/recharges/{{rechargeId}}", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges","{{rechargeId}}"] }
+          }
+        },
+        {
+          "name": "My Transaction History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    if (res.length > 0) {",
+                  "        pm.collectionVariables.set('transactionId', res[0].transactionId);",
+                  "        console.log('First transactionId saved:', res[0].transactionId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/me/transactions", "host": ["{{baseUrl}}"], "path": ["api","users","me","transactions"] }
+          }
+        },
+        {
+          "name": "Get Transaction Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/me/transactions/{{transactionId}}", "host": ["{{baseUrl}}"], "path": ["api","users","me","transactions","{{transactionId}}"] }
+          }
+        },
+        {
+          "name": "Get Transaction for Recharge",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/me/recharges/{{rechargeId}}/transaction", "host": ["{{baseUrl}}"], "path": ["api","users","me","recharges","{{rechargeId}}","transaction"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📡 Operator Service",
+      "description": "Telecom operators and recharge plans — public read, admin write",
+      "item": [
+        {
+          "name": "Get All Operators",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    if (res.length > 0) {",
+                  "        pm.collectionVariables.set('operatorId', res[0].id);",
+                  "        console.log('First operatorId saved:', res[0].id, '|', res[0].name);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/operators", "host": ["{{baseUrl}}"], "path": ["api","operators"] }
+          }
+        },
+        {
+          "name": "Get Operator by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","operators","{{operatorId}}"] }
+          }
+        },
+        {
+          "name": "Get All Plans",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    if (res.length > 0) {",
+                  "        pm.collectionVariables.set('planId', res[0].id);",
+                  "        console.log('First planId saved:', res[0].id, '|', res[0].name, '| price:', res[0].price);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/plans", "host": ["{{baseUrl}}"], "path": ["api","plans"] }
+          }
+        },
+        {
+          "name": "Get Plan by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/plans/{{planId}}", "host": ["{{baseUrl}}"], "path": ["api","plans","{{planId}}"] }
+          }
+        },
+        {
+          "name": "Get Plans by Operator",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/operators/{{operatorId}}/plans", "host": ["{{baseUrl}}"], "path": ["api","operators","{{operatorId}}","plans"] }
+          }
+        },
+        {
+          "name": "Create Operator (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jio\",\n  \"code\": \"JIO\",\n  \"description\": \"Reliance Jio Infocomm Limited\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/admin/operators", "host": ["{{baseUrl}}"], "path": ["api","admin","operators"] }
+          }
+        },
+        {
+          "name": "Update Operator (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jio Updated\",\n  \"code\": \"JIO\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/admin/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","operators","{{operatorId}}"] }
+          }
+        },
+        {
+          "name": "Deactivate Operator (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/admin/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","operators","{{operatorId}}"] }
+          }
+        },
+        {
+          "name": "Create Plan (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Unlimited 28 Days\",\n  \"price\": 239.00,\n  \"validityDays\": 28,\n  \"data\": \"1.5GB/day\",\n  \"calls\": \"Unlimited\",\n  \"sms\": \"100/day\",\n  \"description\": \"Popular prepaid plan\",\n  \"type\": \"PREPAID\",\n  \"operatorId\": {{operatorId}}\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/admin/plans", "host": ["{{baseUrl}}"], "path": ["api","admin","plans"] }
+          }
+        },
+        {
+          "name": "Deactivate Plan (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/admin/plans/{{planId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","plans","{{planId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔋 Recharge Service",
+      "description": "Mobile recharge operations",
+      "item": [
+        {
+          "name": "Initiate Recharge",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const res = pm.response.json();",
+                  "    pm.collectionVariables.set('rechargeId', res.rechargeId);",
+                  "    pm.test('Recharge initiated', () => pm.response.to.have.status(201));",
+                  "    console.log('rechargeId saved:', res.rechargeId, '| status:', res.status);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"9876543210\",\n  \"operatorId\": {{operatorId}},\n  \"planId\": {{planId}}\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/recharges", "host": ["{{baseUrl}}"], "path": ["api","recharges"] }
+          }
+        },
+        {
+          "name": "My Recharge History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/recharges/history", "host": ["{{baseUrl}}"], "path": ["api","recharges","history"] }
+          }
+        },
+        {
+          "name": "Get Recharge by Recharge ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/recharges/{{rechargeId}}", "host": ["{{baseUrl}}"], "path": ["api","recharges","{{rechargeId}}"] }
+          }
+        },
+        {
+          "name": "Get Recharge by DB ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/recharges/id/1", "host": ["{{baseUrl}}"], "path": ["api","recharges","id","1"] }
+          }
+        },
+        {
+          "name": "Get Recharge History by User ID (Internal)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/recharges/history/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","recharges","history","user","{{userId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Payment Service",
+      "description": "Payment processing and transaction management",
+      "item": [
+        {
+          "name": "Process Payment (Internal)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rechargeId\": \"{{rechargeId}}\",\n  \"userId\": {{userId}},\n  \"amount\": 239.00,\n  \"description\": \"Recharge payment\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/payments/process", "host": ["{{baseUrl}}"], "path": ["api","payments","process"] }
+          }
+        },
+        {
+          "name": "Get Transaction by Transaction ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/payments/transaction/{{transactionId}}", "host": ["{{baseUrl}}"], "path": ["api","payments","transaction","{{transactionId}}"] }
+          }
+        },
+        {
+          "name": "Get Transaction by Recharge ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/payments/recharge/{{rechargeId}}", "host": ["{{baseUrl}}"], "path": ["api","payments","recharge","{{rechargeId}}"] }
+          }
+        },
+        {
+          "name": "Get Transactions by User ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/payments/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","payments","user","{{userId}}"] }
+          }
+        },
+        {
+          "name": "Get All Transactions (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/payments/admin/all", "host": ["{{baseUrl}}"], "path": ["api","payments","admin","all"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 Health & Monitoring",
+      "description": "Actuator health checks for all services",
+      "item": [
+        {
+          "name": "API Gateway Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Auth Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8086/actuator/health", "host": ["http://localhost:8086"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "User Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8081/actuator/health", "host": ["http://localhost:8081"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Recharge Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8082/actuator/health", "host": ["http://localhost:8082"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Payment Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8083/actuator/health", "host": ["http://localhost:8083"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Operator Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8084/actuator/health", "host": ["http://localhost:8084"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Notification Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8085/actuator/health", "host": ["http://localhost:8085"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Eureka Dashboard",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8761", "host": ["http://localhost:8761"], "path": [] }
+          }
+        },
+        {
+          "name": "Swagger UI (Aggregated)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/swagger-ui.html", "host": ["{{baseUrl}}"], "path": ["swagger-ui.html"] }
+          }
+        }
+      ]
+    }
+  ]
+}

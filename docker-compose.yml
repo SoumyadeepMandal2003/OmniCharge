@@ -1,0 +1,66 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INFRASTRUCTURE ONLY — MySQL, RabbitMQ, Zipkin run in Docker
+# Spring Boot services run locally with: mvn spring-boot:run
+#
+# Usage:
+#   docker-compose up -d
+#
+# MySQL is on port 3307 (avoids conflict with any local MySQL on 3306)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: omnicharge-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: omnicharge
+      MYSQL_PASSWORD: omnicharge123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: omnicharge-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: omnicharge-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - omnicharge-net
+
+networks:
+  omnicharge-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

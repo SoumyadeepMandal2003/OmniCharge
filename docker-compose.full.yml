@@ -1,0 +1,258 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FULL DOCKER SETUP — for anyone who clones from GitHub
+# Runs EVERYTHING in Docker. No local installations needed except Docker.
+#
+# Usage:
+#   docker-compose -f docker-compose.full.yml up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: omnicharge-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: omnicharge
+      MYSQL_PASSWORD: omnicharge123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: omnicharge-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - omnicharge-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: omnicharge-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - omnicharge-net
+
+  service-discovery:
+    build: ./service-discovery
+    container_name: omnicharge-discovery
+    ports:
+      - "8761:8761"
+    environment:
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    networks:
+      - omnicharge-net
+
+  config-server:
+    build: ./config-server
+    container_name: omnicharge-config
+    ports:
+      - "8888:8888"
+    depends_on:
+      service-discovery:
+        condition: service_started
+    environment:
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    networks:
+      - omnicharge-net
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: omnicharge-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      service-discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+    environment:
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      CONFIG_SERVER_URL: http://config-server:8888
+      JWT_SECRET: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
+    networks:
+      - omnicharge-net
+
+  auth-service:
+    build: ./auth-service
+    container_name: omnicharge-auth
+    ports:
+      - "8086:8086"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      service-discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_auth?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: omnicharge
+      SPRING_DATASOURCE_PASSWORD: omnicharge123
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      JWT_SECRET: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
+      INTERNAL_SECRET: omnicharge-internal-secret-2024
+      CONFIG_SERVER_URL: http://config-server:8888
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8086/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - omnicharge-net
+
+  user-service:
+    build: ./user-service
+    container_name: omnicharge-user
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      service-discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      auth-service:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_users?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: omnicharge
+      SPRING_DATASOURCE_PASSWORD: omnicharge123
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      JWT_SECRET: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
+      INTERNAL_SECRET: omnicharge-internal-secret-2024
+      CONFIG_SERVER_URL: http://config-server:8888
+    networks:
+      - omnicharge-net
+
+  recharge-service:
+    build: ./recharge-service
+    container_name: omnicharge-recharge
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      service-discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_recharge?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: omnicharge
+      SPRING_DATASOURCE_PASSWORD: omnicharge123
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      RABBITMQ_HOST: rabbitmq
+      JWT_SECRET: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
+      CONFIG_SERVER_URL: http://config-server:8888
+    networks:
+      - omnicharge-net
+
+  payment-service:
+    build: ./payment-service
+    container_name: omnicharge-payment
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      service-discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_payments?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: omnicharge
+      SPRING_DATASOURCE_PASSWORD: omnicharge123
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      RABBITMQ_HOST: rabbitmq
+      JWT_SECRET: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
+      CONFIG_SERVER_URL: http://config-server:8888
+    networks:
+      - omnicharge-net
+
+  operator-service:
+    build: ./operator-service
+    container_name: omnicharge-operator
+    ports:
+      - "8084:8084"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      service-discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/omnicharge_operators?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: omnicharge
+      SPRING_DATASOURCE_PASSWORD: omnicharge123
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      JWT_SECRET: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
+      INTERNAL_SECRET: omnicharge-internal-secret-2024
+      CONFIG_SERVER_URL: http://config-server:8888
+    networks:
+      - omnicharge-net
+
+  notification-service:
+    build: ./notification-service
+    container_name: omnicharge-notification
+    ports:
+      - "8085:8085"
+    depends_on:
+      service-discovery:
+        condition: service_started
+      config-server:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://service-discovery:8761/eureka
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      RABBITMQ_HOST: rabbitmq
+      CONFIG_SERVER_URL: http://config-server:8888
+    networks:
+      - omnicharge-net
+
+networks:
+  omnicharge-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

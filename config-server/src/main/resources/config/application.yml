@@ -1,0 +1,24 @@
+# Shared configuration served to all microservices
+jwt:
+  secret: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
+  expiration: 86400000
+
+spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: UTC
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.omnicharge: DEBUG
