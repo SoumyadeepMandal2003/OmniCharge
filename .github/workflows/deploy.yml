@@ -1,4 +1,4 @@
-name: Deploy to Oracle Cloud
+name: Deploy to DigitalOcean
 
 on:
   push:
@@ -7,23 +7,23 @@ on:
 
 jobs:
   deploy:
-    name: SSH Deploy to Oracle Cloud VM
+    name: SSH Deploy to DigitalOcean Droplet
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Oracle Cloud VM
+      - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.ORACLE_VM_IP }}
-          username: ${{ secrets.ORACLE_VM_USER }}
-          key: ${{ secrets.ORACLE_SSH_PRIVATE_KEY }}
+          host: ${{ secrets.DO_DROPLET_IP }}
+          username: root
+          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           script: |
             cd ~/OmniCharge
             git pull origin main
             docker compose -f docker-compose.prod.yml build --parallel
             docker compose -f docker-compose.prod.yml up -d
-            echo "Deployment complete!"
+            echo "✅ Deployment complete!"
             docker compose -f docker-compose.prod.yml ps
