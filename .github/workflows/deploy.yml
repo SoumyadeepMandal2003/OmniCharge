@@ -25,8 +25,8 @@ jobs:
             git pull origin main
 
             # Build and start all services
-            docker compose -f docker-compose.prod.yml build --parallel
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml build --no-cache --parallel
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             # Wait for config-server to be fully ready before gateway loads routes
             echo "⏳ Waiting for config-server to be ready..."
