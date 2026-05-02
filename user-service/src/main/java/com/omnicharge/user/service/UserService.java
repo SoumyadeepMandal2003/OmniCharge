@@ -9,7 +9,9 @@ import com.omnicharge.user.model.User;
 import com.omnicharge.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +23,16 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final RechargeClient rechargeClient;
-    private final PaymentClient paymentClient;
+
+    // Lazy-injected to avoid startup failures if recharge/payment services
+    // are not yet registered in Eureka when user-service boots
+    @Lazy
+    @Autowired
+    private RechargeClient rechargeClient;
+
+    @Lazy
+    @Autowired
+    private PaymentClient paymentClient;
 
     @Value("${internal.secret:omnicharge-internal-secret-2024}")
     private String internalSecret;
