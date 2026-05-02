@@ -19,6 +19,11 @@ public interface RechargeClient {
     @GetMapping("/api/recharges/{rechargeId}")
     RechargeResponse getRechargeByRechargeId(@PathVariable String rechargeId);
 
+    @org.springframework.web.bind.annotation.DeleteMapping("/api/recharges/internal/user/{userId}")
+    void deleteAllRechargesForUser(
+            @PathVariable Long userId,
+            @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Secret") String internalSecret);
+
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     class RechargeResponse {
         private Long id;

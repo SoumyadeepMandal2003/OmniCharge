@@ -19,6 +19,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/actuator/**", "/v3/api-docs/**", "/swagger-ui/**")
                     .permitAll()
+                .requestMatchers("/api/recharges/internal/**")
+                    .permitAll()
                 .anyRequest()
                     .authenticated())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

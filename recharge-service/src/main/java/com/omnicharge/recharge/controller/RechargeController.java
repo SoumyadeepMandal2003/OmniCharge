@@ -58,6 +58,15 @@ public class RechargeController {
         return ResponseEntity.ok(rechargeService.getRechargeById(id));
     }
 
+    @DeleteMapping("/internal/user/{userId}")
+    @Operation(summary = "Internal — delete all recharges for a user (called by auth-service only)")
+    public ResponseEntity<Void> deleteAllRechargesForUser(
+            @PathVariable Long userId,
+            @RequestHeader("X-Internal-Secret") String internalSecret) {
+        rechargeService.deleteAllRechargesForUser(userId, internalSecret);
+        return ResponseEntity.noContent().build();
+    }
+
     private Long extractUserId(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {

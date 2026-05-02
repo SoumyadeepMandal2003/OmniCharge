@@ -28,4 +28,10 @@ public class PaymentClientFallback implements PaymentClient {
         log.error("payment-service unavailable — fallback for getTransactionByRechargeId({})", rechargeId);
         throw new RuntimeException("Payment service is currently unavailable. Please try again later.");
     }
+
+    @Override
+    public void deleteAllTransactionsForUser(Long userId, String internalSecret) {
+        log.error("payment-service unavailable — could not delete transactions for userId={}", userId);
+        throw new RuntimeException("Payment service is currently unavailable. Account deletion aborted.");
+    }
 }

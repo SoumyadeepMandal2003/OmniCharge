@@ -33,6 +33,15 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createProfile(request));
     }
 
+    @DeleteMapping("/api/users/internal/{userId}")
+    @Operation(summary = "Internal — delete user profile and all data (called by auth-service only)")
+    public ResponseEntity<Void> deleteAccount(
+            @PathVariable Long userId,
+            @RequestHeader("X-Internal-Secret") String internalSecret) {
+        userService.deleteAccount(userId, internalSecret);
+        return ResponseEntity.noContent().build();
+    }
+
     // ── Profile ─────────────────────────────────────────────────────────────
 
     @GetMapping("/api/users/me")

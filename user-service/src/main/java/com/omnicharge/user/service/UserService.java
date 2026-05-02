@@ -1,5 +1,7 @@
 package com.omnicharge.user.service;
 
+import com.omnicharge.user.client.PaymentClient;
+import com.omnicharge.user.client.RechargeClient;
 import com.omnicharge.user.dto.UserDtos.*;
 import com.omnicharge.user.exception.DuplicateResourceException;
 import com.omnicharge.user.exception.ResourceNotFoundException;
@@ -7,6 +9,7 @@ import com.omnicharge.user.model.User;
 import com.omnicharge.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,11 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RechargeClient rechargeClient;
+    private final PaymentClient paymentClient;
+
+    @Value("${internal.secret:omnicharge-internal-secret-2024}")
+    private String internalSecret;
 
     /**
      * Called internally by auth-service via Feign after credentials are saved.
@@ -74,6 +82,37 @@ public class UserService {
 
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    /**
+     * Called internally by auth-service to delete all user data.
+     * Deletes recharges and transactions from downstream services, then removes the user profile.
+     */
+    @Transactional
+    public void deleteAccount(Long userId, String secret) {
+        if (!internalSecret.equals(secret)) {
+            throw new org.springframework.security.access.AccessDeniedException("Invalid internal secret");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+        // Delete recharge history from recharge-service
+        try {
+            rechargeClient.deleteAllRechargesForUser(userId, internalSecret);
+        } catch (Exception e) {
+            log.warn("Failed to delete recharges for userId={}: {}", userId, e.getMessage());
+        }
+
+        // Delete transactions from payment-service
+        try {
+            paymentClient.deleteAllTransactionsForUser(userId, internalSecret);
+        } catch (Exception e) {
+            log.warn("Failed to delete transactions for userId={}: {}", userId, e.getMessage());
+        }
+
+        // Delete user profile
+        userRepository.delete(user);
+        log.info("Deleted account and all data for userId={}, email={}", userId, user.getEmail());
     }
 
     private UserResponse toResponse(User user) {

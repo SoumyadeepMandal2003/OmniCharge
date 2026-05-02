@@ -69,5 +69,11 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/account")
+    @Operation(summary = "Permanently delete account — removes all user data across all services")
+    public ResponseEntity<Void> deleteAccount(Authentication authentication) {
+        authService.deleteAccount(authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 
 }
