@@ -12,13 +12,13 @@ import java.util.List;
 public class RechargeClientFallback implements RechargeClient {
 
     @Override
-    public List<RechargeResponse> getRechargeHistoryByUserId(Long userId) {
+    public List<RechargeResponse> getRechargeHistoryByUserId(Long userId, String authHeader) {
         log.error("recharge-service unavailable — returning empty history for userId={}", userId);
         return Collections.emptyList();
     }
 
     @Override
-    public RechargeResponse getRechargeByRechargeId(String rechargeId) {
+    public RechargeResponse getRechargeByRechargeId(String rechargeId, String authHeader) {
         log.error("recharge-service unavailable — fallback for getRechargeByRechargeId({})", rechargeId);
         throw new RuntimeException("Recharge service is currently unavailable. Please try again later.");
     }

@@ -14,13 +14,19 @@ import java.util.List;
 public interface PaymentClient {
 
     @GetMapping("/api/payments/user/{userId}")
-    List<TransactionResponse> getTransactionsByUserId(@PathVariable Long userId);
+    List<TransactionResponse> getTransactionsByUserId(
+            @PathVariable Long userId,
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader);
 
     @GetMapping("/api/payments/transaction/{transactionId}")
-    TransactionResponse getTransactionById(@PathVariable String transactionId);
+    TransactionResponse getTransactionById(
+            @PathVariable String transactionId,
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader);
 
     @GetMapping("/api/payments/recharge/{rechargeId}")
-    TransactionResponse getTransactionByRechargeId(@PathVariable String rechargeId);
+    TransactionResponse getTransactionByRechargeId(
+            @PathVariable String rechargeId,
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader);
 
     @org.springframework.web.bind.annotation.DeleteMapping("/api/payments/internal/user/{userId}")
     void deleteAllTransactionsForUser(

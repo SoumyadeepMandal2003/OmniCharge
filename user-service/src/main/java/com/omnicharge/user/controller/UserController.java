@@ -75,35 +75,45 @@ public class UserController {
 
     @GetMapping("/api/users/me/recharges")
     @Operation(summary = "View my recharge history", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<List<RechargeResponse>> getMyRechargeHistory(Authentication authentication) {
+    public ResponseEntity<List<RechargeResponse>> getMyRechargeHistory(
+            Authentication authentication,
+            @RequestHeader("Authorization") String authHeader) {
         UserResponse current = userService.getUserByEmail(authentication.getName());
-        return ResponseEntity.ok(dashboardService.getRechargeHistory(current.getId()));
+        return ResponseEntity.ok(dashboardService.getRechargeHistory(current.getId(), authHeader));
     }
 
     @GetMapping("/api/users/me/recharges/{rechargeId}")
     @Operation(summary = "Get a specific recharge", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<RechargeResponse> getMyRecharge(@PathVariable String rechargeId) {
-        return ResponseEntity.ok(dashboardService.getRechargeByRechargeId(rechargeId));
+    public ResponseEntity<RechargeResponse> getMyRecharge(
+            @PathVariable String rechargeId,
+            @RequestHeader("Authorization") String authHeader) {
+        return ResponseEntity.ok(dashboardService.getRechargeByRechargeId(rechargeId, authHeader));
     }
 
     // ── Transaction Status ──────────────────────────────────────────────────
 
     @GetMapping("/api/users/me/transactions")
     @Operation(summary = "View my transaction history", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<List<TransactionResponse>> getMyTransactions(Authentication authentication) {
+    public ResponseEntity<List<TransactionResponse>> getMyTransactions(
+            Authentication authentication,
+            @RequestHeader("Authorization") String authHeader) {
         UserResponse current = userService.getUserByEmail(authentication.getName());
-        return ResponseEntity.ok(dashboardService.getMyTransactions(current.getId()));
+        return ResponseEntity.ok(dashboardService.getMyTransactions(current.getId(), authHeader));
     }
 
     @GetMapping("/api/users/me/transactions/{transactionId}")
     @Operation(summary = "View transaction status", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<TransactionResponse> getTransactionStatus(@PathVariable String transactionId) {
-        return ResponseEntity.ok(dashboardService.getTransactionStatus(transactionId));
+    public ResponseEntity<TransactionResponse> getTransactionStatus(
+            @PathVariable String transactionId,
+            @RequestHeader("Authorization") String authHeader) {
+        return ResponseEntity.ok(dashboardService.getTransactionStatus(transactionId, authHeader));
     }
 
     @GetMapping("/api/users/me/recharges/{rechargeId}/transaction")
     @Operation(summary = "Get payment transaction for a recharge", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<TransactionResponse> getTransactionByRecharge(@PathVariable String rechargeId) {
-        return ResponseEntity.ok(dashboardService.getTransactionByRechargeId(rechargeId));
+    public ResponseEntity<TransactionResponse> getTransactionByRecharge(
+            @PathVariable String rechargeId,
+            @RequestHeader("Authorization") String authHeader) {
+        return ResponseEntity.ok(dashboardService.getTransactionByRechargeId(rechargeId, authHeader));
     }
 }

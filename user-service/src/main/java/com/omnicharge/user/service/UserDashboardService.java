@@ -20,13 +20,9 @@ public class UserDashboardService {
     private final RechargeClient rechargeClient;
     private final PaymentClient paymentClient;
 
-    /**
-     * Returns the full recharge history for the logged-in user.
-     * Delegates to recharge-service via Feign.
-     */
-    public List<RechargeResponse> getRechargeHistory(Long userId) {
+    public List<RechargeResponse> getRechargeHistory(Long userId, String authHeader) {
         try {
-            return rechargeClient.getRechargeHistoryByUserId(userId);
+            return rechargeClient.getRechargeHistoryByUserId(userId, authHeader);
         } catch (FeignException.NotFound e) {
             return List.of();
         } catch (FeignException e) {
@@ -35,12 +31,9 @@ public class UserDashboardService {
         }
     }
 
-    /**
-     * Returns a single recharge by its rechargeId (UUID).
-     */
-    public RechargeResponse getRechargeByRechargeId(String rechargeId) {
+    public RechargeResponse getRechargeByRechargeId(String rechargeId, String authHeader) {
         try {
-            return rechargeClient.getRechargeByRechargeId(rechargeId);
+            return rechargeClient.getRechargeByRechargeId(rechargeId, authHeader);
         } catch (FeignException.NotFound e) {
             throw new ResourceNotFoundException("Recharge not found: " + rechargeId);
         } catch (FeignException e) {
@@ -49,13 +42,9 @@ public class UserDashboardService {
         }
     }
 
-    /**
-     * Returns all transactions for the logged-in user.
-     * Delegates to payment-service via Feign.
-     */
-    public List<TransactionResponse> getMyTransactions(Long userId) {
+    public List<TransactionResponse> getMyTransactions(Long userId, String authHeader) {
         try {
-            return paymentClient.getTransactionsByUserId(userId);
+            return paymentClient.getTransactionsByUserId(userId, authHeader);
         } catch (FeignException.NotFound e) {
             return List.of();
         } catch (FeignException e) {
@@ -64,12 +53,9 @@ public class UserDashboardService {
         }
     }
 
-    /**
-     * Returns the transaction status by transactionId.
-     */
-    public TransactionResponse getTransactionStatus(String transactionId) {
+    public TransactionResponse getTransactionStatus(String transactionId, String authHeader) {
         try {
-            return paymentClient.getTransactionById(transactionId);
+            return paymentClient.getTransactionById(transactionId, authHeader);
         } catch (FeignException.NotFound e) {
             throw new ResourceNotFoundException("Transaction not found: " + transactionId);
         } catch (FeignException e) {
@@ -78,12 +64,9 @@ public class UserDashboardService {
         }
     }
 
-    /**
-     * Returns the transaction linked to a specific rechargeId.
-     */
-    public TransactionResponse getTransactionByRechargeId(String rechargeId) {
+    public TransactionResponse getTransactionByRechargeId(String rechargeId, String authHeader) {
         try {
-            return paymentClient.getTransactionByRechargeId(rechargeId);
+            return paymentClient.getTransactionByRechargeId(rechargeId, authHeader);
         } catch (FeignException.NotFound e) {
             throw new ResourceNotFoundException("No transaction found for recharge: " + rechargeId);
         } catch (FeignException e) {

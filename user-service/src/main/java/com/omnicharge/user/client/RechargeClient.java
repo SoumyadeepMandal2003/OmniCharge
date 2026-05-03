@@ -14,10 +14,14 @@ import java.util.List;
 public interface RechargeClient {
 
     @GetMapping("/api/recharges/history/user/{userId}")
-    List<RechargeResponse> getRechargeHistoryByUserId(@PathVariable Long userId);
+    List<RechargeResponse> getRechargeHistoryByUserId(
+            @PathVariable Long userId,
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader);
 
     @GetMapping("/api/recharges/{rechargeId}")
-    RechargeResponse getRechargeByRechargeId(@PathVariable String rechargeId);
+    RechargeResponse getRechargeByRechargeId(
+            @PathVariable String rechargeId,
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader);
 
     @org.springframework.web.bind.annotation.DeleteMapping("/api/recharges/internal/user/{userId}")
     void deleteAllRechargesForUser(
