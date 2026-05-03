@@ -68,11 +68,23 @@ public class RechargeController {
     }
 
     private Long extractUserId(HttpServletRequest request) {
+        // Primary: use X-User-Id header forwarded by the API gateway
+        String userIdHeader = request.getHeader("X-User-Id");
+        if (userIdHeader != null && !userIdHeader.isBlank() && !userIdHeader.equals("null")) {
+            try {
+                return Long.parseLong(userIdHeader);
+            } catch (NumberFormatException ignored) {}
+        }
+        // Fallback: extract from JWT directly
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
             throw new IllegalStateException("Missing or invalid Authorization header");
         }
         String token = header.substring(7);
-        return jwtUtil.extractUserId(token);
+        Long userId = jwtUtil.extractUserId(token);
+        if (userId == null) {
+            throw new IllegalStateException("userId not found in token — please re-login");
+        }
+        return userId;
     }
 }
