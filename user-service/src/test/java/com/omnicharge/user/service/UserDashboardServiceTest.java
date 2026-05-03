@@ -20,6 +20,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserDashboardServiceTest {
 
+    private static final String AUTH = "Bearer test-token";
+
     @Mock private RechargeClient rechargeClient;
     @Mock private PaymentClient paymentClient;
     @InjectMocks private UserDashboardService dashboardService;
@@ -30,9 +32,9 @@ class UserDashboardServiceTest {
                 .rechargeId("uuid-1").mobileNumber("9876543210")
                 .operatorName("Airtel").planName("299 Plan")
                 .amount(new BigDecimal("299")).status("SUCCESS").build();
-        when(rechargeClient.getRechargeHistoryByUserId(1L)).thenReturn(List.of(r));
+        when(rechargeClient.getRechargeHistoryByUserId(1L, AUTH)).thenReturn(List.of(r));
 
-        List<RechargeResponse> result = dashboardService.getRechargeHistory(1L);
+        List<RechargeResponse> result = dashboardService.getRechargeHistory(1L, AUTH);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getRechargeId()).isEqualTo("uuid-1");
@@ -40,19 +42,19 @@ class UserDashboardServiceTest {
 
     @Test
     void getRechargeHistory_serviceDown_returnsEmpty() {
-        when(rechargeClient.getRechargeHistoryByUserId(1L))
+        when(rechargeClient.getRechargeHistoryByUserId(1L, AUTH))
                 .thenThrow(FeignException.NotFound.class);
 
-        List<RechargeResponse> result = dashboardService.getRechargeHistory(1L);
+        List<RechargeResponse> result = dashboardService.getRechargeHistory(1L, AUTH);
         assertThat(result).isEmpty();
     }
 
     @Test
     void getRechargeByRechargeId_notFound_throwsException() {
-        when(rechargeClient.getRechargeByRechargeId("bad-id"))
+        when(rechargeClient.getRechargeByRechargeId("bad-id", AUTH))
                 .thenThrow(FeignException.NotFound.class);
 
-        assertThatThrownBy(() -> dashboardService.getRechargeByRechargeId("bad-id"))
+        assertThatThrownBy(() -> dashboardService.getRechargeByRechargeId("bad-id", AUTH))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("bad-id");
     }
@@ -62,9 +64,9 @@ class UserDashboardServiceTest {
         TransactionResponse t = TransactionResponse.builder()
                 .transactionId("txn-1").rechargeId("uuid-1")
                 .amount(new BigDecimal("299")).status("SUCCESS").build();
-        when(paymentClient.getTransactionsByUserId(1L)).thenReturn(List.of(t));
+        when(paymentClient.getTransactionsByUserId(1L, AUTH)).thenReturn(List.of(t));
 
-        List<TransactionResponse> result = dashboardService.getMyTransactions(1L);
+        List<TransactionResponse> result = dashboardService.getMyTransactions(1L, AUTH);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo("SUCCESS");
@@ -74,18 +76,18 @@ class UserDashboardServiceTest {
     void getTransactionStatus_success() {
         TransactionResponse t = TransactionResponse.builder()
                 .transactionId("txn-1").status("SUCCESS").build();
-        when(paymentClient.getTransactionById("txn-1")).thenReturn(t);
+        when(paymentClient.getTransactionById("txn-1", AUTH)).thenReturn(t);
 
-        TransactionResponse result = dashboardService.getTransactionStatus("txn-1");
+        TransactionResponse result = dashboardService.getTransactionStatus("txn-1", AUTH);
         assertThat(result.getStatus()).isEqualTo("SUCCESS");
     }
 
     @Test
     void getTransactionStatus_notFound_throwsException() {
-        when(paymentClient.getTransactionById("bad-txn"))
+        when(paymentClient.getTransactionById("bad-txn", AUTH))
                 .thenThrow(FeignException.NotFound.class);
 
-        assertThatThrownBy(() -> dashboardService.getTransactionStatus("bad-txn"))
+        assertThatThrownBy(() -> dashboardService.getTransactionStatus("bad-txn", AUTH))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("bad-txn");
     }
@@ -94,9 +96,9 @@ class UserDashboardServiceTest {
     void getTransactionByRechargeId_success() {
         TransactionResponse t = TransactionResponse.builder()
                 .transactionId("txn-1").rechargeId("uuid-1").status("SUCCESS").build();
-        when(paymentClient.getTransactionByRechargeId("uuid-1")).thenReturn(t);
+        when(paymentClient.getTransactionByRechargeId("uuid-1", AUTH)).thenReturn(t);
 
-        TransactionResponse result = dashboardService.getTransactionByRechargeId("uuid-1");
+        TransactionResponse result = dashboardService.getTransactionByRechargeId("uuid-1", AUTH);
         assertThat(result.getTransactionId()).isEqualTo("txn-1");
     }
 }
