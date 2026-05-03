@@ -20,11 +20,6 @@ public interface UserServiceClient {
             @RequestHeader("X-Internal-Secret") String internalSecret,
             @RequestBody CreateProfileRequest request);
 
-    @org.springframework.web.bind.annotation.DeleteMapping("/api/users/internal/{userId}")
-    void deleteUserProfile(
-            @PathVariable Long userId,
-            @RequestHeader("X-Internal-Secret") String internalSecret);
-
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     class CreateProfileRequest {
         private String email;

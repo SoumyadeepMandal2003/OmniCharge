@@ -25,9 +25,6 @@ public class PaymentService {
     @Value("${payment.max-amount:10000}")
     private BigDecimal maxTransactionAmount;
 
-    @Value("${internal.secret:omnicharge-internal-secret-2024}")
-    private String internalSecret;
-
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request) {
         // Check for duplicate recharge payment
@@ -92,16 +89,6 @@ public class PaymentService {
 
     public List<TransactionResponse> getAllTransactions() {
         return transactionRepository.findAll().stream().map(this::toResponse).toList();
-    }
-
-    @Transactional
-    public void deleteAllTransactionsForUser(Long userId, String secret) {
-        if (!internalSecret.equals(secret)) {
-            throw new org.springframework.security.access.AccessDeniedException("Invalid internal secret");
-        }
-        List<Transaction> transactions = transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        transactionRepository.deleteAll(transactions);
-        log.info("Deleted {} transaction records for userId={}", transactions.size(), userId);
     }
 
     private void simulatePaymentGateway(java.math.BigDecimal amount) {

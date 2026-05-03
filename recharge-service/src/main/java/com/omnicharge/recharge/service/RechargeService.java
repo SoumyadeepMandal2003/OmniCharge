@@ -9,7 +9,6 @@ import com.omnicharge.recharge.repository.RechargeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +28,6 @@ public class RechargeService {
 
     public static final String EXCHANGE = "omnicharge.exchange";
     public static final String ROUTING_KEY = "recharge.completed";
-
-    @Value("${internal.secret:omnicharge-internal-secret-2024}")
-    private String internalSecret;
 
     @Transactional
     public RechargeResponse initiateRecharge(Long userId, RechargeRequest request) {
@@ -110,16 +106,6 @@ public class RechargeService {
         return rechargeRepository.findById(id)
                 .map(this::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + id));
-    }
-
-    @Transactional
-    public void deleteAllRechargesForUser(Long userId, String secret) {
-        if (!internalSecret.equals(secret)) {
-            throw new org.springframework.security.access.AccessDeniedException("Invalid internal secret");
-        }
-        List<Recharge> recharges = rechargeRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        rechargeRepository.deleteAll(recharges);
-        log.info("Deleted {} recharge records for userId={}", recharges.size(), userId);
     }
 
     private RechargeResponse toResponse(Recharge r) {

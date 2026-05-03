@@ -185,33 +185,6 @@ public class AuthService implements UserDetailsService {
         log.info("Password changed for {}", email);
     }
 
-    /**
-     * Permanently deletes the account:
-     * 1. Calls user-service to delete profile, recharge history, and transactions.
-     * 2. Deletes all refresh tokens for this user.
-     * 3. Deletes the auth credentials.
-     */
-    @Transactional
-    public void deleteAccount(String email) {
-        AuthCredential credential = credentialRepository.findByEmail(email)
-                .orElseThrow(() -> new AuthException("User not found"));
-
-        // Step 1 — delete profile + recharge + transaction data via user-service
-        try {
-            userServiceClient.deleteUserProfile(credential.getUserId(), internalSecret);
-        } catch (Exception e) {
-            log.error("Failed to delete user profile for {}: {}", email, e.getMessage());
-            throw new AuthException("Account deletion failed: unable to remove user data. Please try again.");
-        }
-
-        // Step 2 — delete all refresh tokens
-        refreshTokenRepository.deleteAllByEmail(email);
-
-        // Step 3 — delete auth credentials
-        credentialRepository.delete(credential);
-        log.info("Account permanently deleted for {}", email);
-    }
-
 
 
     @Override

@@ -28,11 +28,6 @@ public interface PaymentClient {
             @PathVariable String rechargeId,
             @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader);
 
-    @org.springframework.web.bind.annotation.DeleteMapping("/api/payments/internal/user/{userId}")
-    void deleteAllTransactionsForUser(
-            @PathVariable Long userId,
-            @org.springframework.web.bind.annotation.RequestHeader("X-Internal-Secret") String internalSecret);
-
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     class TransactionResponse {
         private Long id;

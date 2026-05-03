@@ -52,13 +52,4 @@ public class PaymentController {
     public ResponseEntity<List<TransactionResponse>> getAllTransactions() {
         return ResponseEntity.ok(paymentService.getAllTransactions());
     }
-
-    @DeleteMapping("/internal/user/{userId}")
-    @Operation(summary = "Internal — delete all transactions for a user (called by auth-service only)")
-    public ResponseEntity<Void> deleteAllTransactionsForUser(
-            @PathVariable Long userId,
-            @RequestHeader("X-Internal-Secret") String internalSecret) {
-        paymentService.deleteAllTransactionsForUser(userId, internalSecret);
-        return ResponseEntity.noContent().build();
-    }
 }

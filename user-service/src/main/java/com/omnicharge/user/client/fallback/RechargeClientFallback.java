@@ -22,10 +22,4 @@ public class RechargeClientFallback implements RechargeClient {
         log.error("recharge-service unavailable — fallback for getRechargeByRechargeId({})", rechargeId);
         throw new RuntimeException("Recharge service is currently unavailable. Please try again later.");
     }
-
-    @Override
-    public void deleteAllRechargesForUser(Long userId, String internalSecret) {
-        log.error("recharge-service unavailable — could not delete recharges for userId={}", userId);
-        throw new RuntimeException("Recharge service is currently unavailable. Account deletion aborted.");
-    }
 }
