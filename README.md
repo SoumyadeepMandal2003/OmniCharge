@@ -2,7 +2,7 @@
 
 <img src="https://img.shields.io/badge/OmniCharge-Mobile%20Recharge%20Platform-6366f1?style=for-the-badge&logo=lightning&logoColor=white" alt="OmniCharge"/>
 
-# ⚡ OmniCharge
+# <img src="https://raw.githubusercontent.com/SoumyadeepMandal2003/OmniCharge/main/assets/icon.svg" width="40" height="40" style="vertical-align:middle"/> OmniCharge
 
 ### *Production-grade Microservices Backend for Mobile Recharge*
 
