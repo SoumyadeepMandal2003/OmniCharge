@@ -136,6 +136,12 @@ services:
         condition: service_healthy
     networks:
       - omnicharge-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
 
   # ── Microservices ───────────────────────────────────────────────────────────
 
@@ -164,6 +170,12 @@ services:
         condition: service_healthy
     networks:
       - omnicharge-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
 
   user-service:
     build:
