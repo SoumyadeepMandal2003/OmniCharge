@@ -31,6 +31,9 @@ eureka:
 jwt:
   secret: ${JWT_SECRET:OmniChargeSecretKey2024SuperSecureBase64EncodedString==}
 
+internal:
+  secret: ${INTERNAL_SECRET:omnicharge-internal-secret-2024}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -45,27 +48,31 @@ resilience4j:
       operator-service:
         registerHealthIndicator: true
         slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 10
+        permittedNumberOfCallsInHalfOpenState: 5
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 10s
-        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+        failureRateThreshold: 60
         eventConsumerBufferSize: 10
+        ignoreExceptions:
+          - feign.FeignException.NotFound
       payment-service:
         registerHealthIndicator: true
         slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 10
+        permittedNumberOfCallsInHalfOpenState: 5
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 10s
-        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+        failureRateThreshold: 60
         eventConsumerBufferSize: 10
+        ignoreExceptions:
+          - feign.FeignException.NotFound
   timelimiter:
     instances:
       operator-service:
-        timeoutDuration: 3s
+        timeoutDuration: 10s
       payment-service:
-        timeoutDuration: 5s
+        timeoutDuration: 10s
 
 management:
   tracing:

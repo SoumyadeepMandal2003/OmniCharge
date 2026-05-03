@@ -31,6 +31,9 @@ eureka:
 jwt:
   secret: ${JWT_SECRET:OmniChargeSecretKey2024SuperSecureBase64EncodedString==}
 
+internal:
+  secret: ${INTERNAL_SECRET:omnicharge-internal-secret-2024}
+
 payment:
   max-amount: ${PAYMENT_MAX_AMOUNT:10000}
 

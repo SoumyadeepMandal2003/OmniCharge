@@ -43,27 +43,31 @@ resilience4j:
       recharge-service:
         registerHealthIndicator: true
         slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 10
+        permittedNumberOfCallsInHalfOpenState: 5
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 10s
-        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+        failureRateThreshold: 60
         eventConsumerBufferSize: 10
+        ignoreExceptions:
+          - feign.FeignException.NotFound
       payment-service:
         registerHealthIndicator: true
         slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 10
+        permittedNumberOfCallsInHalfOpenState: 5
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 10s
-        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+        failureRateThreshold: 60
         eventConsumerBufferSize: 10
+        ignoreExceptions:
+          - feign.FeignException.NotFound
   timelimiter:
     instances:
       recharge-service:
-        timeoutDuration: 3s
+        timeoutDuration: 10s
       payment-service:
-        timeoutDuration: 3s
+        timeoutDuration: 10s
 
 management:
   tracing:

@@ -9,6 +9,23 @@ spring:
       write-dates-as-timestamps: false
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: UTC
+  # MySQL connection pool — prevents "too many connections" and stale connection issues
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000        # 5 min
+      connection-timeout: 30000   # 30s
+      max-lifetime: 1800000       # 30 min — must be less than MySQL wait_timeout
+      connection-test-query: SELECT 1
+
+# Eureka — faster heartbeat so stale instances are evicted sooner
+eureka:
+  instance:
+    lease-renewal-interval-in-seconds: 15    # heartbeat every 15s (default 30s)
+    lease-expiration-duration-in-seconds: 45 # evict after 45s of no heartbeat (default 90s)
+  client:
+    registry-fetch-interval-seconds: 10      # refresh registry every 10s (default 30s)
 
 management:
   endpoints:
