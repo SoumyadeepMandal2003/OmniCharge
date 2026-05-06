@@ -29,10 +29,19 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             "/api/operators",
             "/api/plans",
             "/actuator/**",
+            // Swagger UI static assets and config
             "/v3/api-docs/**",
+            "/v3/api-docs",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/*/v3/api-docs"
+            "/webjars/**",
+            // Per-service API docs proxied through gateway
+            "/*/v3/api-docs",
+            "/auth-service/v3/api-docs",
+            "/user-service/v3/api-docs",
+            "/recharge-service/v3/api-docs",
+            "/payment-service/v3/api-docs",
+            "/operator-service/v3/api-docs"
     );
 
     public JwtAuthenticationFilter() {
@@ -46,7 +55,15 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
             // Allow open endpoints through without token (using AntPathMatcher for pattern matching)
             if (OPEN_ENDPOINTS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path))) {
-                return chain.filter(exchange);
+                // Still strip any spoofed identity headers even on open endpoints
+                ServerWebExchange stripped = exchange.mutate()
+                        .request(r -> r.headers(headers -> {
+                            headers.remove("X-User-Id");
+                            headers.remove("X-User-Email");
+                            headers.remove("X-User-Role");
+                        }))
+                        .build();
+                return chain.filter(stripped);
             }
 
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
@@ -62,9 +79,15 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                         .build()
                         .parseClaimsJws(token).getBody();
 
-                // Forward user info to downstream services via headers
+                // Strip any client-supplied identity headers to prevent spoofing,
+                // then inject trusted values extracted from the validated JWT
                 ServerWebExchange mutatedExchange = exchange.mutate()
                         .request(r -> r
+                                .headers(headers -> {
+                                    headers.remove("X-User-Id");
+                                    headers.remove("X-User-Email");
+                                    headers.remove("X-User-Role");
+                                })
                                 .header("X-User-Email", claims.getSubject())
                                 .header("X-User-Id", String.valueOf(claims.get("userId")))
                                 .header("X-User-Role", String.valueOf(claims.get("role"))))

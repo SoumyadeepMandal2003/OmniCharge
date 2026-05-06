@@ -23,7 +23,13 @@ public class JwtUtil {
     }
 
     public Long extractUserId(String token) {
-        return extract(token, c -> c.get("userId", Long.class));
+        return extract(token, c -> {
+            Object raw = c.get("userId");
+            if (raw instanceof Long l) return l;
+            if (raw instanceof Integer i) return i.longValue();
+            if (raw instanceof Number n) return n.longValue();
+            return null;
+        });
     }
 
     public String extractRole(String token) {
