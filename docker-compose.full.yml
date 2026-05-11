@@ -96,6 +96,7 @@ services:
       CONFIG_SERVER_URL: http://config-server:8888
       JWT_SECRET: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
       API_GATEWAY_URL: http://4.186.25.145:8080
+      API_GATEWAY_HOST: 4.186.25.145:8080
     networks:
       - omnicharge-net
 

@@ -59,6 +59,9 @@ spring:
             - Path=/user-service/v3/api-docs
           filters:
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Host, ${API_GATEWAY_HOST:localhost:8080}
+            - AddRequestHeader=X-Forwarded-Proto, http
+            - AddRequestHeader=X-Forwarded-Prefix, /user-service
 
         - id: recharge-service-docs
           uri: lb://recharge-service
@@ -66,6 +69,9 @@ spring:
             - Path=/recharge-service/v3/api-docs
           filters:
             - RewritePath=/recharge-service/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Host, ${API_GATEWAY_HOST:localhost:8080}
+            - AddRequestHeader=X-Forwarded-Proto, http
+            - AddRequestHeader=X-Forwarded-Prefix, /recharge-service
 
         - id: payment-service-docs
           uri: lb://payment-service
@@ -73,6 +79,9 @@ spring:
             - Path=/payment-service/v3/api-docs
           filters:
             - RewritePath=/payment-service/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Host, ${API_GATEWAY_HOST:localhost:8080}
+            - AddRequestHeader=X-Forwarded-Proto, http
+            - AddRequestHeader=X-Forwarded-Prefix, /payment-service
 
         - id: operator-service-docs
           uri: lb://operator-service
@@ -80,6 +89,9 @@ spring:
             - Path=/operator-service/v3/api-docs
           filters:
             - RewritePath=/operator-service/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Host, ${API_GATEWAY_HOST:localhost:8080}
+            - AddRequestHeader=X-Forwarded-Proto, http
+            - AddRequestHeader=X-Forwarded-Prefix, /operator-service
 
         - id: auth-service-docs
           uri: lb://auth-service
@@ -87,6 +99,9 @@ spring:
             - Path=/auth-service/v3/api-docs
           filters:
             - RewritePath=/auth-service/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Host, ${API_GATEWAY_HOST:localhost:8080}
+            - AddRequestHeader=X-Forwarded-Proto, http
+            - AddRequestHeader=X-Forwarded-Prefix, /auth-service
 
       globalcors:
         cors-configurations:

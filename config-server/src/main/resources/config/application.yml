@@ -3,6 +3,11 @@ jwt:
   secret: OmniChargeSecretKey2024SuperSecureBase64EncodedString==
   expiration: 86400000
 
+server:
+  # Trust X-Forwarded-* headers from the gateway so springdoc generates
+  # correct server URLs (public gateway IP) instead of internal Docker IPs
+  forward-headers-strategy: framework
+
 spring:
   jackson:
     serialization:
