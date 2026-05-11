@@ -32,9 +32,6 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-  servers:
-    - url: http://4.186.25.145:8080
-      description: Production API Gateway
 
 management:
   tracing:
