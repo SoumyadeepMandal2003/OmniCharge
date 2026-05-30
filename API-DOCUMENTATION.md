@@ -1,6 +1,6 @@
 # OmniCharge API Documentation
 
-**Base URL**: `http://4.186.25.145:8080`  
+**Base URL**: `http://localhost:8080`  
 **Version**: 1.0.0  
 **Auth**: JWT Bearer Token
 
@@ -860,13 +860,13 @@ All services expose health endpoints via Spring Boot Actuator.
 
 | Service | URL |
 |---|---|
-| API Gateway | `http://4.186.25.145:8080/actuator/health` |
-| Auth Service | `http://4.186.25.145:8086/actuator/health` |
-| User Service | `http://4.186.25.145:8081/actuator/health` |
-| Recharge Service | `http://4.186.25.145:8082/actuator/health` |
-| Payment Service | `http://4.186.25.145:8083/actuator/health` |
-| Operator Service | `http://4.186.25.145:8084/actuator/health` |
-| Notification Service | `http://4.186.25.145:8085/actuator/health` |
+| API Gateway | `http://localhost:8080/actuator/health` |
+| Auth Service | `http://localhost:8086/actuator/health` |
+| User Service | `http://localhost:8081/actuator/health` |
+| Recharge Service | `http://localhost:8082/actuator/health` |
+| Payment Service | `http://localhost:8083/actuator/health` |
+| Operator Service | `http://localhost:8084/actuator/health` |
+| Notification Service | `http://localhost:8085/actuator/health` |
 
 **Auth required**: No
 
@@ -901,7 +901,7 @@ All services expose health endpoints via Spring Boot Actuator.
 1. Open Postman
 2. Click **Import**
 3. Select `OmniCharge.postman_collection.json`
-4. Collection appears with `baseUrl` = `http://4.186.25.145:8080`
+4. Collection appears with `baseUrl` = `http://localhost:8080`
 
 ### Step 2 — Run Full Test Suite in Order
 
@@ -990,7 +990,7 @@ Each request has automated assertions. In the test results:
 
 **Test with Swagger UI:**
 ```
-http://4.186.25.145:8080/swagger-ui.html
+http://localhost:8080/swagger-ui.html
 ```
 - Use the dropdown to switch between services
 - Click **Authorize** → paste your accessToken
@@ -998,9 +998,9 @@ http://4.186.25.145:8080/swagger-ui.html
 
 **Monitor services:**
 ```
-http://4.186.25.145:8761        ← Eureka (all registered services)
-http://4.186.25.145:15672       ← RabbitMQ (login: omnicharge / OmniRabbit@2024)
-http://4.186.25.145:9411        ← Zipkin (distributed tracing)
+http://localhost:8761        ← Eureka (all registered services)
+http://localhost:15672       ← RabbitMQ (login: omnicharge / OmniRabbit@2024)
+http://localhost:9411        ← Zipkin (distributed tracing)
 ```
 
 ---

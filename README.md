@@ -22,9 +22,9 @@
 
 <br/>
 
-[![Live API](https://img.shields.io/badge/🌐%20Live%20API-4.186.25.145:8080-10b981?style=for-the-badge)](http://4.186.25.145:8080/actuator/health)
-[![Swagger UI](https://img.shields.io/badge/📖%20Swagger%20UI-Explore%20APIs-6366f1?style=for-the-badge)](http://4.186.25.145:8080/swagger-ui.html)
-[![Eureka](https://img.shields.io/badge/🔍%20Eureka%20Dashboard-Service%20Registry-f59e0b?style=for-the-badge)](http://4.186.25.145:8761)
+[![Live API](https://img.shields.io/badge/🌐%20Local%20API-localhost:8080-10b981?style=for-the-badge)](http://localhost:8080/actuator/health)
+[![Swagger UI](https://img.shields.io/badge/📖%20Swagger%20UI-Explore%20APIs-6366f1?style=for-the-badge)](http://localhost:8080/swagger-ui.html)
+[![Eureka](https://img.shields.io/badge/🔍%20Eureka%20Dashboard-Service%20Registry-f59e0b?style=for-the-badge)](http://localhost:8761)
 
 </div>
 
@@ -252,8 +252,8 @@ cd notification-service && mvn spring-boot:run &
 
 ## 📡 API Reference
 
-> **Base URL:** `http://4.186.25.145:8080`  
-> **Full Swagger UI:** [`/swagger-ui.html`](http://4.186.25.145:8080/swagger-ui.html)
+> **Base URL:** `http://localhost:8080`  
+> **Full Swagger UI:** [`/swagger-ui.html`](http://localhost:8080/swagger-ui.html)
 
 ### 🔐 Auth Endpoints
 
@@ -315,17 +315,17 @@ cd notification-service && mvn spring-boot:run &
 
 ```bash
 # 1. Register
-curl -X POST http://4.186.25.145:8080/api/auth/register \
+curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com","password":"Test@1234","fullName":"John Doe","mobile":"9876543210"}'
 
 # 2. Login → grab accessToken
-TOKEN=$(curl -s -X POST http://4.186.25.145:8080/api/auth/login \
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com","password":"Test@1234"}' | jq -r '.accessToken')
 
 # 3. Recharge
-curl -X POST http://4.186.25.145:8080/api/recharges \
+curl -X POST http://localhost:8080/api/recharges \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"mobileNumber":"9876543210","operatorId":1,"planId":1}'
@@ -373,23 +373,23 @@ Phase 7 — Health Checks                (50–56)
 
 | Dashboard | URL | Credentials |
 |-----------|-----|-------------|
-| 🔍 **Eureka** — Service Registry | [`http://4.186.25.145:8761`](http://4.186.25.145:8761) | None |
-| 🐰 **RabbitMQ** — Message Broker | [`http://4.186.25.145:15672`](http://4.186.25.145:15672) | `omnicharge` / `OmniRabbit@2024` |
-| 🔭 **Zipkin** — Distributed Tracing | [`http://4.186.25.145:9411`](http://4.186.25.145:9411) | None |
-| 📖 **Swagger UI** — API Docs | [`http://4.186.25.145:8080/swagger-ui.html`](http://4.186.25.145:8080/swagger-ui.html) | JWT token |
+| 🔍 **Eureka** — Service Registry | [`http://localhost:8761`](http://localhost:8761) | None |
+| 🐰 **RabbitMQ** — Message Broker | [`http://localhost:15672`](http://localhost:15672) | `guest` / `guest` |
+| 🔭 **Zipkin** — Distributed Tracing | [`http://localhost:9411`](http://localhost:9411) | None |
+| 📖 **Swagger UI** — API Docs | [`http://localhost:8080/swagger-ui.html`](http://localhost:8080/swagger-ui.html) | JWT token |
 
 ### Health Checks
 
 ```bash
 # Gateway (all services)
-curl http://4.186.25.145:8080/actuator/health
+curl http://localhost:8080/actuator/health
 
 # Individual services
-curl http://4.186.25.145:8086/actuator/health  # auth
-curl http://4.186.25.145:8081/actuator/health  # user
-curl http://4.186.25.145:8082/actuator/health  # recharge
-curl http://4.186.25.145:8083/actuator/health  # payment
-curl http://4.186.25.145:8084/actuator/health  # operator
+curl http://localhost:8086/actuator/health  # auth
+curl http://localhost:8081/actuator/health  # user
+curl http://localhost:8082/actuator/health  # recharge
+curl http://localhost:8083/actuator/health  # payment
+curl http://localhost:8084/actuator/health  # operator
 ```
 
 ---
@@ -401,8 +401,8 @@ curl http://4.186.25.145:8084/actuator/health  # operator
 Deployed on **Microsoft Azure Standard_B2s** (2 vCPU, 4GB RAM) via Docker Compose.
 
 ```bash
-# SSH into VM
-ssh -i ~/.ssh/omnicharge_azure azureuser@4.186.25.145
+# SSH into VM (when deployed on a server)
+ssh -i ~/.ssh/your_key user@YOUR_SERVER_IP
 
 # Redeploy all services
 cd OmniCharge

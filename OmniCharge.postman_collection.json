@@ -16,7 +16,7 @@
     ]
   },
   "variable": [
-    { "key": "baseUrl",        "value": "http://4.186.25.145:8080", "type": "string" },
+    { "key": "baseUrl",        "value": "http://localhost:8080", "type": "string" },
     { "key": "accessToken",    "value": "",                          "type": "string" },
     { "key": "refreshToken",   "value": "",                          "type": "string" },
     { "key": "adminAccessToken","value": "",                         "type": "string" },
@@ -2502,7 +2502,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://4.186.25.145:8086/actuator/health", "raw": "http://4.186.25.145:8086/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8086", "path": ["actuator","health"] },
+            "url": { "raw": "http://localhost:8086/actuator/health", "raw": "http://localhost:8086/actuator/health", "protocol": "http", "host": ["localhost"], "port": "8086", "path": ["actuator","health"] },
             "auth": { "type": "noauth" }
           },
           "event": [
@@ -2538,7 +2538,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://4.186.25.145:8081/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8081", "path": ["actuator","health"] },
+            "url": { "raw": "http://localhost:8081/actuator/health", "protocol": "http", "host": ["localhost"], "port": "8081", "path": ["actuator","health"] },
             "auth": { "type": "noauth" }
           },
           "event": [
@@ -2574,7 +2574,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://4.186.25.145:8082/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8082", "path": ["actuator","health"] },
+            "url": { "raw": "http://localhost:8082/actuator/health", "protocol": "http", "host": ["localhost"], "port": "8082", "path": ["actuator","health"] },
             "auth": { "type": "noauth" }
           },
           "event": [
@@ -2610,7 +2610,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://4.186.25.145:8083/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8083", "path": ["actuator","health"] },
+            "url": { "raw": "http://localhost:8083/actuator/health", "protocol": "http", "host": ["localhost"], "port": "8083", "path": ["actuator","health"] },
             "auth": { "type": "noauth" }
           },
           "event": [
@@ -2646,7 +2646,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://4.186.25.145:8084/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8084", "path": ["actuator","health"] },
+            "url": { "raw": "http://localhost:8084/actuator/health", "protocol": "http", "host": ["localhost"], "port": "8084", "path": ["actuator","health"] },
             "auth": { "type": "noauth" }
           },
           "event": [
@@ -2682,7 +2682,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "http://4.186.25.145:8085/actuator/health", "protocol": "http", "host": ["4.186.25.145"], "port": "8085", "path": ["actuator","health"] },
+            "url": { "raw": "http://localhost:8085/actuator/health", "protocol": "http", "host": ["localhost"], "port": "8085", "path": ["actuator","health"] },
             "auth": { "type": "noauth" }
           },
           "event": [
